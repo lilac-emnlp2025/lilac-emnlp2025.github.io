@@ -38,7 +38,7 @@
           
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              Sangoh Lee
+              <a href="https://leesangoh.github.io/" target="_blank">Sangoh Lee</a>
               <a href="https://www.linkedin.com/in/sangoh-lee-6aba1a23a/" target="_blank" class="external-link button is-small is-rounded is-light" style="padding: 0px 8px; margin-left: 2px; border: none; vertical-align: middle;">
                 <i class="fab fa-linkedin" style="color: #0077b5;"></i>
               </a>
@@ -48,11 +48,11 @@
             </span>
             ,
             <span class="author-block">
-              Sangwoo Mo
+              <a href="https://sites.google.com/view/sangwoomo" target="_blank">Sangwoo Mo</a>
             </span>
             ,
             <span class="author-block">
-              Wook-Shin Han
+              <a href="https://wscrony.github.io/" target="_blank">Wook-Shin Han</a>
             </span>
           </div>
 
@@ -390,12 +390,12 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Google Robot (Fractal)</h4>
-        <img src="./static/images/table2.png" alt="Table 2 Results" style="width:100%;">
+        <h4 class="title is-5">WidowX (Bridge)</h4>
+        <img src="./static/images/table3.png" alt="Table 3 Results" style="width:100%;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
-            We evaluate robustness on the Google Robot (Fractal) across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks. 
-            VAP significantly outperforms generic policies and text-based prompts. Notably, in the challenging <strong>Visual Variant</strong> track, VAP maintains a strong success rate of 58.2%, whereas the best baseline drops to 17.3%, demonstrating superior generalization to novel visual conditions.
+            On the WidowX arm using the Bridge dataset, tasks involve precise pick-and-place in cluttered scenes. 
+            While baselines often fail to identify the correct instance (resulting in near-zero success for hard prompts), VAP achieves high success rates across all tasks, effectively grounding the user's object even when visually similar distractors are present.
           </p>
         </div>
       </div>
@@ -405,12 +405,12 @@ Experiments show that VAP consistently outperforms generic policies and token-le
 
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">WidowX (Bridge)</h4>
-        <img src="./static/images/table3.png" alt="Table 3 Results" style="width:100%;">
+        <h4 class="title is-5">Google Robot (Fractal)</h4>
+        <img src="./static/images/table2.png" alt="Table 2 Results" style="width:100%;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
-            On the WidowX arm using the Bridge dataset, tasks involve precise pick-and-place in cluttered scenes. 
-            While baselines often fail to identify the correct instance (resulting in near-zero success for hard prompts), VAP achieves high success rates across all tasks, effectively grounding the user's object even when visually similar distractors are present.
+            We evaluate robustness on the Google Robot (Fractal) across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks. 
+            VAP significantly outperforms generic policies and text-based prompts. Notably, in the challenging <strong>Visual Variant</strong> track, VAP maintains a strong success rate of 58.2%, whereas the best baseline drops to 17.3%, demonstrating superior generalization to novel visual conditions.
           </p>
         </div>
       </div>
