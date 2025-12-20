@@ -247,7 +247,48 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           </p>
         </div>
 
-        <h3 class="title is-4" style="margin-top: 2rem;">1. Personalized-SIMPLER (WidowX)</h3>
+        <h3 class="title is-4" style="margin-top: 2rem;">1. Personalized-SIMPLER (Google Robot)</h3>
+        <div class="content has-text-justified">
+          <p>
+             Evaluation on the Google Robot using the Fractal dataset setting. We test robustness across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks.
+          </p>
+        </div>
+        <div class="columns is-multiline">
+          <div class="column is-half">
+            <div class="content">
+              <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Matching)</p>
+              <video autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
+              </video>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="content">
+              <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Variant)</p>
+              <video autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/simpler_fractal_pen_holder_variant.mp4" type="video/mp4">
+              </video>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="content">
+              <p class="has-text-weight-semibold">"Move coke can near my bottle" (Visual Matching)</p>
+              <video autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/simpler_fractal_bottle_matching.mp4" type="video/mp4">
+              </video>
+            </div>
+          </div>
+          <div class="column is-half">
+            <div class="content">
+              <p class="has-text-weight-semibold">"Move coke can near my bottle" (Visual Variant)</p>
+              <video autoplay controls muted loop playsinline height="100%">
+                <source src="./static/videos/simpler_fractal_bottle_variant.mp4" type="video/mp4">
+              </video>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="title is-4" style="margin-top: 2rem;">2. Personalized-SIMPLER (WidowX)</h3>
         <div class="content has-text-justified">
           <p>
             Evaluation on the WidowX arm using the Bridge dataset setting. These tasks involve pick-and-place operations in cluttered environments where distractors closely resemble the target object.
@@ -283,47 +324,6 @@ Experiments show that VAP consistently outperforms generic policies and token-le
               <p class="has-text-weight-semibold">"Put my straw cup in basket"</p>
               <video autoplay controls muted loop playsinline height="100%">
                 <source src="./static/videos/simpler_bridge_straw_cup.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-        </div>
-
-        <h3 class="title is-4" style="margin-top: 2rem;">2. Personalized-SIMPLER (Google Robot)</h3>
-        <div class="content has-text-justified">
-          <p>
-             Evaluation on the Google Robot using the Fractal dataset setting. We test robustness across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks.
-          </p>
-        </div>
-        <div class="columns is-multiline">
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/simpler_fractal_pen_holder_variant.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Move my bottle near coke can" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/simpler_fractal_bottle_matching.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Move my bottle near coke can" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%">
-                <source src="./static/videos/simpler_fractal_bottle_variant.mp4" type="video/mp4">
               </video>
             </div>
           </div>
