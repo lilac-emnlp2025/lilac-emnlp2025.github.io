@@ -38,7 +38,7 @@
           
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="#">Sangoh Lee</a>
+              Sangoh Lee
               <a href="https://www.linkedin.com/in/sangoh-lee-6aba1a23a/" target="_blank" class="external-link button is-small is-rounded is-light" style="padding: 0px 8px; margin-left: 2px; border: none; vertical-align: middle;">
                 <i class="fab fa-linkedin" style="color: #0077b5;"></i>
               </a>
@@ -48,11 +48,11 @@
             </span>
             ,
             <span class="author-block">
-              <a href="#">Sangwoo Mo</a>
+              Sangwoo Mo
             </span>
             ,
             <span class="author-block">
-              <a href="#">Wook-Shin Han</a>
+              Wook-Shin Han
             </span>
           </div>
 
@@ -130,9 +130,7 @@
 <section class="hero teaser" id="teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-      <video id="teaser" autoplay muted loop playsinline height="100%">
-        <source src="./static/videos/teaser.mp4" type="video/mp4">
-      </video>
+      <img src="./static/images/banner.png" alt="VAP Banner" style="width: 100%; margin-top: 1.5rem;"/>
       <h2 class="subtitle has-text-centered" style="margin-top: 1rem;">
         VAP enables frozen VLA models to manipulate user-specific objects (e.g., "my cup") among visually similar distractors without any training.
       </h2>
@@ -182,84 +180,6 @@ Experiments show that VAP consistently outperforms generic policies and token-le
   </div>
 </section>
 
-
-<section class="section">
-  <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-full-width">
-        <h2 class="title is-3">Experimental Setup & Benchmarks</h2>
-        <div class="content has-text-justified">
-          <p>
-            We establish three benchmarks to rigorously evaluate instance-level manipulation capabilities. 
-            In all settings, the robot must identify a user-specific target (defined by ~5 reference images) among visually similar distractors of the same category.
-          </p>
-          <ul>
-            <li>
-              <strong>Personalized-SIMPLER:</strong> Adapted from the SIMPLER simulation benchmark. We evaluate on both <strong>Google Robot (Fractal)</strong> and <strong>WidowX (Bridge)</strong> settings, replacing task-relevant objects with high-fidelity 3D assets from Sketchfab.
-            </li>
-            <li>
-              <strong>Personalized-VLABench:</strong> Extends VLABench to multi-view selection tasks (Franka Emika Panda). Requires handling occlusion and consistency across 3 camera views.
-            </li>
-            <li>
-              <strong>Real-world Benchmark:</strong> A physical tabletop setup with a SO-101 arm. Includes 8 everyday categories (e.g., vase, slipper, plushie) with unseen instances collected from the real world.
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <h2 class="title is-3 has-text-centered" style="margin-top: 2rem;">Quantitative Analysis</h2>
-    
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Google Robot (Fractal)</h4>
-        <img src="./static/images/table2.png" alt="Table 2 Results" style="width:100%;">
-        <p class="is-size-7 has-text-left" style="margin-top: 0.5rem;">
-          <strong>Table 2.</strong> VAP significantly outperforms generic policies and text-based prompts in both 'Visual Matching' and 'Visual Variant' tracks.
-        </p>
-      </div>
-    </div>
-    
-    <div style="margin-bottom: 2rem;"></div>
-
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">WidowX (Bridge)</h4>
-        <img src="./static/images/table3.png" alt="Table 3 Results" style="width:100%;">
-        <p class="is-size-7 has-text-left" style="margin-top: 0.5rem;">
-          <strong>Table 3.</strong> On the WidowX arm, baselines often fail to identify the correct instance (near-zero success), while VAP achieves high success rates.
-        </p>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 2rem;"></div>
-
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Personalized-VLABench</h4>
-        <img src="./static/images/table4.png" alt="Table 4 Results" style="width:100%;">
-        <p class="is-size-7 has-text-left" style="margin-top: 0.5rem;">
-          <strong>Table 4.</strong> Multi-view selection results. VAP achieves the highest Success Rate (SR) across all 5 object categories.
-        </p>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 2rem;"></div>
-
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Real-world Performance</h4>
-        <img src="./static/images/figure5.png" alt="Real-world Results" style="width:100%;">
-        <p class="is-size-7 has-text-left" style="margin-top: 0.5rem;">
-          <strong>Figure 5.</strong> Real-world success rates. VAP (yellow) consistently outperforms baselines (blue/green/red) in both pointing and pick-and-place tasks.
-        </p>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
@@ -283,6 +203,37 @@ Experiments show that VAP consistently outperforms generic policies and token-le
   </div>
 </section>
 
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Benchmarks Overview</h2>
+        <div class="content has-text-centered">
+          <img src="./static/images/benchmarks.png"
+               alt="Benchmarks Overview"
+               style="width: 100%; max-width: 1000px;"/>
+        </div>
+        <div class="content has-text-justified" style="margin-top: 1rem;">
+          <p>
+            We establish three benchmarks to rigorously evaluate instance-level manipulation capabilities. 
+            In all settings, the robot must identify a user-specific target (defined by ~5 reference images) among visually similar distractors of the same category.
+          </p>
+          <ul>
+            <li>
+              <strong>Personalized-SIMPLER:</strong> Adapted from the SIMPLER simulation benchmark. We evaluate on both <strong>Google Robot (Fractal)</strong> and <strong>WidowX (Bridge)</strong> settings, replacing task-relevant objects with high-fidelity 3D assets from Sketchfab.
+            </li>
+            <li>
+              <strong>Personalized-VLABench:</strong> Extends VLABench to multi-view selection tasks (Franka Emika Panda). Requires handling occlusion and consistency across 3 camera views.
+            </li>
+            <li>
+              <strong>Real-world Benchmark:</strong> A physical tabletop setup with a SO-101 arm. Includes 8 everyday categories (e.g., vase, slipper, plushie) with unseen instances collected from the real world.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="section">
   <div class="container is-max-desktop">
@@ -430,6 +381,71 @@ Experiments show that VAP consistently outperforms generic policies and token-le
 
       </div>
     </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Quantitative Analysis</h2>
+    
+    <div class="columns is-centered">
+      <div class="column is-four-fifths has-text-centered">
+        <h4 class="title is-5">Google Robot (Fractal)</h4>
+        <img src="./static/images/table2.png" alt="Table 2 Results" style="width:100%;">
+        <div class="content has-text-justified" style="margin-top: 0.5rem;">
+          <p>
+            We evaluate robustness on the Google Robot (Fractal) across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks. 
+            VAP significantly outperforms generic policies and text-based prompts. Notably, in the challenging <strong>Visual Variant</strong> track, VAP maintains a strong success rate of 58.2%, whereas the best baseline drops to 17.3%, demonstrating superior generalization to novel visual conditions.
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 2rem;"></div>
+
+    <div class="columns is-centered">
+      <div class="column is-four-fifths has-text-centered">
+        <h4 class="title is-5">WidowX (Bridge)</h4>
+        <img src="./static/images/table3.png" alt="Table 3 Results" style="width:100%;">
+        <div class="content has-text-justified" style="margin-top: 0.5rem;">
+          <p>
+            On the WidowX arm using the Bridge dataset, tasks involve precise pick-and-place in cluttered scenes. 
+            While baselines often fail to identify the correct instance (resulting in near-zero success for hard prompts), VAP achieves high success rates across all tasks, effectively grounding the user's object even when visually similar distractors are present.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 2rem;"></div>
+
+    <div class="columns is-centered">
+      <div class="column is-four-fifths has-text-centered">
+        <h4 class="title is-5">Personalized-VLABench</h4>
+        <img src="./static/images/table4.png" alt="Table 4 Results" style="width:100%;">
+        <div class="content has-text-justified" style="margin-top: 0.5rem;">
+          <p>
+            In multi-view selection tasks with a Franka Emika Panda, the agent must handle occlusion and consistency across front, side, and wrist cameras.
+            VAP achieves the highest Success Rate (SR) across all 5 object categories, proving its ability to aggregate visual cues from multiple viewpoints to resolve ambiguity.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 2rem;"></div>
+
+    <div class="columns is-centered">
+      <div class="column is-four-fifths has-text-centered">
+        <h4 class="title is-5">Real-world Performance</h4>
+        <img src="./static/images/figure5.png" alt="Real-world Results" style="width:100%;">
+        <div class="content has-text-justified" style="margin-top: 0.5rem;">
+          <p>
+            We validate VAP on a physical tabletop setup with a SO-101 arm using 8 everyday object categories. 
+            VAP (yellow bars) consistently outperforms baselines (blue/green/red) in both pointing and pick-and-place tasks, confirming that our training-free visual prompting method transfers reliably to the real world with unseen physical objects.
+          </p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
