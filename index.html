@@ -107,12 +107,16 @@
       
       <div class="columns is-centered has-text-centered">
         <div class="column is-full-width">
-          <img src="./static/images/banner.png" alt="VAP Banner" style="width: 100%; border-radius: 10px;"/>
-          <div class="content has-text-justified" style="margin-top: 15px;">
+          <img src="./static/images/banner.png" alt="VAP Banner" style="width: 100%; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);"/>
+          
+          <div class="content has-text-justified" style="margin-top: 20px; font-size: 1.1rem; line-height: 1.6;">
             <p>
-              <strong>Figure 1. VAP Concept.</strong> 
-              Typically, VLA models struggle with personalized commands like "bring <em>my</em> cup". 
-              VAP bridges this gap by grounding the user-specific object from reference images and injecting a visual prompt (highlight) directly into the robot's observation.
+              <span class="is-size-5 has-text-weight-bold">"Robot, bring <i>my</i> cup."</span>
+              <br>
+              Imagine asking for your favorite coffee mug while getting ready for work, or having a robot fetch your pet’s specific toy from a pile of similar objects. 
+              To be truly useful in daily life, robots must discern the subtle details that distinguish <strong>"a cup"</strong> from <strong>"<i>my</i> cup."</strong>
+              <br>
+              However, standard VLA models struggle with these personalized nuances. <strong>Visual Attentive Prompting (VAP)</strong> bridges this gap, enabling robots to identify and manipulate your unique belongings immediately—without any training.
             </p>
           </div>
         </div>
@@ -128,49 +132,39 @@
       
       <div id="results-carousel" class="carousel results-carousel">
         
-        <div class="item has-text-centered"> <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <video poster="" id="camera" autoplay controls muted loop playsinline 
-                   style="max-height: 400px; width: auto; border-radius: 10px;"> <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
+        <div class="item">
+          <div class="video-container">
+            <video poster="" id="camera" autoplay controls muted loop playsinline>
+              <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
             </video>
-            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
-              "Put my camera on towel"
-            </p>
+            <p class="video-caption">"Put my camera on towel"</p>
           </div>
         </div>
         
-        <div class="item has-text-centered">
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <video poster="" id="pen" autoplay controls muted loop playsinline 
-                   style="max-height: 400px; width: auto; border-radius: 10px;">
+        <div class="item">
+          <div class="video-container">
+            <video poster="" id="pen" autoplay controls muted loop playsinline>
               <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
             </video>
-            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
-              "Pick my pen holder"
-            </p>
+            <p class="video-caption">"Pick my pen holder"</p>
           </div>
         </div>
 
-        <div class="item has-text-centered">
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <video poster="" id="bag" autoplay controls muted loop playsinline 
-                   style="max-height: 400px; width: auto; border-radius: 10px;">
+        <div class="item">
+          <div class="video-container">
+            <video poster="" id="bag" autoplay controls muted loop playsinline>
               <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
             </video>
-            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
-              "Select my leather bag"
-            </p>
+            <p class="video-caption">"Select my leather bag"</p>
           </div>
         </div>
 
-        <div class="item has-text-centered">
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <video poster="" id="shaver" autoplay controls muted loop playsinline 
-                   style="max-height: 400px; width: auto; border-radius: 10px;">
+        <div class="item">
+          <div class="video-container">
+            <video poster="" id="shaver" autoplay controls muted loop playsinline>
               <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
             </video>
-            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
-              "Pick my shaver"
-            </p>
+            <p class="video-caption">"Pick my shaver"</p>
           </div>
         </div>
 
@@ -183,6 +177,47 @@
     </div>
   </div>
 </section>
+
+<style>
+  /* 비디오 컨테이너: 높이를 고정하고 내용을 중앙 정렬 */
+  .video-container {
+    height: 320px; /* 전체 높이 고정 (줄임) */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #000; /* 비디오 배경 검정 처리 (레터박스 효과) */
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 10px; /* 좌우 간격 */
+  }
+
+  /* 비디오: 비율 유지하며 컨테이너 안에 맞춤 */
+  .video-container video {
+    max-width: 100%;
+    max-height: 280px; /* 비디오 자체 최대 높이 제한 */
+    width: auto;
+    height: auto;
+  }
+
+  /* 캡션 스타일 */
+  .video-caption {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    text-align: center;
+    padding: 5px 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    position: absolute;
+    bottom: 0;
+  }
+  
+  /* Carousel Item 자체의 높이도 고정 */
+  .results-carousel .item {
+    height: 320px; 
+  }
+</style>
 
 <section class="section hero is-light">
   <div class="container is-max-desktop">
