@@ -8,281 +8,131 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bring My Cup! Personalizing Vision-Language-Action Models with Visual Attentive Prompting</title>
 
-  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
-        rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
 
   <link rel="stylesheet" href="./static/css/bulma.min.css">
-  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
-  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
   <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="./static/css/index.css">
   <link rel="icon" href="./static/images/favicon.png" type="image/png">
 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
-  <script src="./static/js/bulma-carousel.min.js"></script>
-  <script src="./static/js/bulma-slider.min.js"></script>
-  <script src="./static/js/index.js"></script>
 
   <style>
-    /* 1. Global Layout Fixes */
+    /* 1. 기본 레이아웃 */
     html, body {
-      overflow-x: hidden; /* 가로 스크롤 방지 */
+      overflow-x: hidden;
       width: 100%;
     }
 
-    /* 2. Interactive Hover (PC Only) */
-    @media screen and (min-width: 769px) {
-      .hover-effect {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      .hover-effect:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-      }
+    /* 2. 배너 이미지 반응형 처리 */
+    .banner-image {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* 3. Carousel Layout (Desktop Default) */
-    .carousel-item-container {
+    /* 3. 커스텀 비디오 카루셀 (라이브러리 제거 버전) */
+    .custom-carousel {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      overflow: hidden; /* 넘치는 부분 숨김 */
+    }
+
+    .carousel-track {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto; /* 가로 스크롤 허용 */
+      scroll-behavior: smooth;
+      padding: 10px 5px;
+      
+      /* 스크롤바 숨기기 */
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    
+    .carousel-track::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+
+    /* 비디오 카드 스타일 */
+    .video-card {
+      flex: 0 0 auto; /* 크기 줄어들지 않음 */
+      width: 320px;   /* PC 기본 너비 */
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 10px;
     }
 
-    .carousel-video {
-      border-radius: 10px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      height: 280px; 
-      width: auto;
-      max-width: 100%;
+    .video-card video {
+      width: 100%;
+      height: 240px; /* 비디오 높이 통일 */
       object-fit: contain;
-      background-color: #000;
+      border-radius: 10px;
+      background: #000;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
-    /* 4. ★★★ MOBILE CRITICAL FIXES ★★★ */
+    .video-caption {
+      margin-top: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #4a4a4a;
+      text-align: center;
+    }
+
+    /* 네비게이션 버튼 스타일 */
+    .nav-btn {
+      position: absolute;
+      top: 40%; /* 비디오 중앙쯤 위치 */
+      transform: translateY(-50%);
+      background-color: rgba(0, 0, 0, 0.6);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+    }
+
+    .nav-btn:hover { background-color: rgba(0, 0, 0, 0.8); }
+    .prev-btn { left: 10px; }
+    .next-btn { right: 10px; }
+
+    /* 4. 모바일 최적화 */
     @media screen and (max-width: 768px) {
-      /* [Fix 0] Global Container Fix */
-      .container.is-max-desktop {
-        max-width: 100% !important;
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
+      .hero-body { padding: 1.5rem 1rem; }
+      
+      .publication-title { font-size: 1.8rem !important; }
+      
+      /* 모바일에서는 비디오를 화면 너비에 맞춤 */
+      .video-card {
+        width: 85vw; /* 화면의 85% 차지 */
+      }
+      
+      .video-card video {
+        height: auto; /* 비율 유지 */
+        aspect-ratio: 4/3;
       }
 
-      /* [Fix 1] Hero Teaser Section - Container & Padding */
-      .hero.teaser .hero-body {
-        padding: 1.5rem 0 !important;
-        overflow-x: hidden;
-      }
-
-      .hero.teaser .container {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        max-width: 100% !important;
-        overflow-x: hidden;
-      }
-
-      /* [Fix 2] Banner Image Section */
-      .hero.teaser .columns {
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        width: 100%;
-      }
-
-      .hero.teaser .column {
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
-      }
-
-      .banner-image {
-        width: 100% !important;
-        max-width: 100% !important;
-        height: auto !important;
-        object-fit: contain;
-        border-radius: 8px !important;
-      }
-
-      /* [Fix 3] Text Content - Full Width & Readable Font */
-      .hero.teaser .is-four-fifths {
-        width: 100% !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-      }
-
-      .hero.teaser .content.has-text-justified {
-        font-size: 1rem !important;
-        text-align: left !important;
-      }
-
-      /* [Fix 4] Carousel Container - Prevent Overflow & Single Slide */
-      .carousel.results-carousel {
-        width: 100% !important;
-        overflow: visible !important;
-        position: relative;
-        height: auto !important;
-        min-height: auto !important;
-        touch-action: pan-x !important;
-      }
-
-      .carousel .slider-container {
-        overflow-x: hidden !important;
-        height: auto !important;
-        touch-action: pan-x !important;
-      }
-
-      .carousel .slider {
-        overflow-x: hidden !important;
-        height: auto !important;
-        display: flex !important;
-        align-items: center !important;
-        touch-action: pan-x !important;
-      }
-
-      /* Ensure carousel area doesn't block touches */
-      .carousel, .carousel * {
-        -webkit-user-select: none;
-        user-select: none;
-      }
-
-      /* Force single slide on mobile */
-      .carousel .slider-item {
-        width: 100% !important;
-        flex: 0 0 100% !important;
-        height: auto !important;
-      }
-
-      .carousel .item {
-        height: auto !important;
-      }
-
-      /* [Fix 5] Video Sizing on Mobile */
-      .carousel-video {
-        width: calc(100vw - 3rem) !important;  /* Full width minus padding */
-        max-width: 100% !important;
-        height: auto !important;
-        max-height: 300px !important;  /* Fixed max height for consistency */
-        object-fit: contain !important;  /* Maintain aspect ratio, show full video */
-        background-color: #000 !important;  /* Keep black bars if needed */
-        border-radius: 8px !important;
-        display: block !important;
-        margin: 0 auto !important;
-      }
-
-      .carousel-item-container {
-        padding: 1rem !important;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .carousel-item-container p {
-        font-size: 0.9rem !important;
-        margin-top: 0.5rem !important;
-        padding: 0 0.5rem !important;
-        text-align: center;
-      }
-
-      /* [Fix 6] Subtitle Spacing */
-      .hero.teaser .subtitle {
-        font-size: 1rem !important;
-        padding: 0 1rem !important;
-        margin-top: 1rem !important;
-      }
-
-      /* [Fix 7] HIDE Bulma's navigation arrows on mobile - we use custom ones */
-      .slider-navigation-previous,
-      .slider-navigation-next,
-      .carousel-navigation-previous,
-      .carousel-navigation-next,
-      button.slider-navigation-previous,
-      button.slider-navigation-next,
-      .slider .slider-navigation .slider-navigation-previous,
-      .slider .slider-navigation .slider-navigation-next,
-      button[class*="navigation"]:not(.custom-nav-btn),
-      [class*="slider-navigation"]:not(.custom-nav-btn) {
-        display: none !important;
-      }
-
-      /* Arrow Icon Color Fix */
-      .slider-navigation-previous *,
-      .slider-navigation-next *,
-      .carousel-navigation-previous *,
-      .carousel-navigation-next * {
-        color: white !important;
-        font-size: 1.5rem !important;
-      }
-
-      /* Positioning */
-      .slider-navigation-previous,
-      .carousel-navigation-previous,
-      button.slider-navigation-previous,
-      .slider .slider-navigation .slider-navigation-previous {
-        left: 10px !important;
-      }
-
-      .slider-navigation-next,
-      .carousel-navigation-next,
-      button.slider-navigation-next,
-      .slider .slider-navigation .slider-navigation-next {
-        right: 10px !important;
-      }
-
-      /* Make sure carousel wrapper doesn't cut off arrows */
-      #results-carousel {
-        overflow: visible !important;
-        padding: 0 !important;
-      }
-
-      /* Custom navigation buttons for mobile */
-      .custom-nav-btn {
-        position: absolute !important;
-        top: 40% !important;
-        transform: translateY(-50%) !important;
-        width: 55px !important;
-        height: 55px !important;
-        border-radius: 50% !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
-        border: 3px solid rgba(255, 255, 255, 0.5) !important;
-        color: white !important;
-        font-size: 1.5rem !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        z-index: 99999 !important;
-        cursor: pointer !important;
-        touch-action: manipulation !important;
-        -webkit-tap-highlight-color: rgba(255,255,255,0.3) !important;
-      }
-
-      .custom-nav-prev {
-        left: 5px !important;
-      }
-
-      .custom-nav-next {
-        right: 5px !important;
-      }
-
-      .custom-nav-btn:active {
-        background-color: rgba(0, 0, 0, 0.9) !important;
-        transform: translateY(-50%) scale(0.95) !important;
-      }
-    }
-
-    /* Desktop: hide custom buttons, show Bulma's */
-    @media screen and (min-width: 769px) {
-      .custom-nav-btn {
-        display: none !important;
+      /* 버튼 크기 키우기 (터치 용이) */
+      .nav-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
       }
     }
   </style>
 </head>
 <body>
-
 
 <section class="hero">
   <div class="hero-body">
@@ -312,43 +162,30 @@
           <div class="column has-text-centered">
             <div class="publication-links">
               <span class="link-block">
-                <a href="./static/paper.pdf"
-                   class="external-link button is-normal is-rounded is-dark hover-effect">
-                  <span class="icon">
-                      <i class="fas fa-file-pdf"></i>
-                  </span>
+                <a href="./static/paper.pdf" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
                   <span>Paper</span>
                 </a>
               </span>
               <span class="link-block">
-                <a href="#"
-                   class="external-link button is-normal is-rounded is-dark hover-effect">
-                  <span class="icon">
-                      <i class="ai ai-arxiv"></i>
-                  </span>
+                <a href="#" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
                   <span>arXiv</span>
                 </a>
               </span>
               <span class="link-block">
-                <a href="https://github.com/vap-project/vap"
-                   class="external-link button is-normal is-rounded is-dark hover-effect">
-                  <span class="icon">
-                      <i class="fab fa-github"></i>
-                  </span>
+                <a href="https://github.com/vap-project/vap" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
                   <span>Code</span>
-                  </a>
+                </a>
               </span>
               <span class="link-block">
-                <a href="https://huggingface.co/leesangoh"
-                   class="external-link button is-normal is-rounded is-dark hover-effect">
-                  <span class="icon">
-                      <p style="font-size:18px">🤗</p>
-                  </span>
+                <a href="https://huggingface.co/leesangoh" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><p style="font-size:18px">🤗</p></span>
                   <span>Dataset</span>
-                  </a>
+                </a>
               </span>
             </div>
-
           </div>
         </div>
       </div>
@@ -362,7 +199,7 @@
       
       <div class="columns is-centered has-text-centered" style="margin-bottom: 1.5rem;">
         <div class="column is-12">
-          <img src="./static/images/banner.png" alt="VAP Banner" class="hover-effect banner-image" style="width: 100%; height: auto; border-radius: 10px;"/>
+          <img src="./static/images/banner.png" alt="VAP Banner" class="banner-image"/>
         </div>
       </div>
 
@@ -377,58 +214,46 @@
         </div>
       </div>
 
-      <div style="position: relative;">
-        <div id="results-carousel" class="carousel results-carousel">
-
-          <div class="item">
-            <div class="carousel-item-container">
-              <video poster="" id="camera" autoplay controls muted loop playsinline class="carousel-video hover-effect">
-                <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
-              </video>
-              <p class="is-size-6 has-text-weight-bold has-text-centered">"Put my camera on towel"</p>
-            </div>
+      <div class="custom-carousel">
+        <button class="nav-btn prev-btn" onclick="scrollCarousel(-1)"><i class="fas fa-chevron-left"></i></button>
+        
+        <div class="carousel-track" id="videoTrack">
+          
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline>
+              <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Put my camera on towel"</p>
           </div>
 
-          <div class="item">
-            <div class="carousel-item-container">
-              <video poster="" id="pen" autoplay controls muted loop playsinline class="carousel-video hover-effect">
-                <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
-              </video>
-              <p class="is-size-6 has-text-weight-bold has-text-centered">"Pick my pen holder"</p>
-            </div>
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline>
+              <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Pick my pen holder"</p>
           </div>
 
-          <div class="item">
-            <div class="carousel-item-container">
-              <video poster="" id="bag" autoplay controls muted loop playsinline class="carousel-video hover-effect">
-                <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
-              </video>
-              <p class="is-size-6 has-text-weight-bold has-text-centered">"Select my leather bag"</p>
-            </div>
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline>
+              <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Select my leather bag"</p>
           </div>
 
-          <div class="item">
-            <div class="carousel-item-container">
-              <video poster="" id="shaver" autoplay controls muted loop playsinline class="carousel-video hover-effect">
-                <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
-              </video>
-              <p class="is-size-6 has-text-weight-bold has-text-centered">"Pick my shaver"</p>
-            </div>
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline>
+              <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Pick my shaver"</p>
           </div>
 
         </div>
 
-        <!-- Custom navigation buttons for mobile -->
-        <button id="custom-prev" class="custom-nav-btn custom-nav-prev" aria-label="Previous">
-          <i class="fas fa-chevron-left"></i>
-        </button>
-        <button id="custom-next" class="custom-nav-btn custom-nav-next" aria-label="Next">
-          <i class="fas fa-chevron-right"></i>
-        </button>
+        <button class="nav-btn next-btn" onclick="scrollCarousel(1)"><i class="fas fa-chevron-right"></i></button>
       </div>
       
       <h2 class="subtitle has-text-centered" style="margin-top: 1.5rem;">
-        <span class="dnerf">VAP</span> enables frozen VLA models to manipulate user-specific objects among visually similar distractors.
+        <span style="font-weight: 700;">VAP</span> enables frozen VLA models to manipulate user-specific objects among visually similar distractors.
       </h2>
 
     </div>
@@ -456,7 +281,6 @@
   </div>
 </section>
 
-
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
@@ -483,10 +307,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
       <div class="column is-full-width">
         <h2 class="title is-3">Method: Visual Attentive Prompting</h2>
         <div class="content has-text-centered">
-          <img src="./static/images/pipeline.png"
-               alt="VAP Pipeline"
-               class="hover-effect"
-               style="width: 100%; max-width: 900px; height: auto;"/>
+          <img src="./static/images/pipeline.png" alt="VAP Pipeline" style="width: 100%; max-width: 900px;"/>
         </div>
         <div class="content has-text-justified" style="margin-top: 1rem;">
           <p>
@@ -507,10 +328,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
       <div class="column is-full-width">
         <h2 class="title is-3">Benchmarks Overview</h2>
         <div class="content has-text-centered">
-          <img src="./static/images/benchmarks.png"
-               alt="Benchmarks Overview"
-               class="hover-effect"
-               style="width: 100%; max-width: 1000px; height: auto;"/>
+          <img src="./static/images/benchmarks.png" alt="Benchmarks Overview" style="width: 100%; max-width: 1000px;"/>
         </div>
         <div class="content has-text-justified" style="margin-top: 1rem;">
           <p>
@@ -556,7 +374,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Put my camera on towel"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
               </video>
             </div>
@@ -564,7 +382,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Put my owl figurine on plate"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_bridge_owl.mp4" type="video/mp4">
               </video>
             </div>
@@ -572,7 +390,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Pick my shaver"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
               </video>
             </div>
@@ -580,7 +398,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Put my straw cup in basket"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_bridge_straw_cup.mp4" type="video/mp4">
               </video>
             </div>
@@ -597,7 +415,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
               </video>
             </div>
@@ -605,7 +423,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_fractal_pen_holder_variant.mp4" type="video/mp4">
               </video>
             </div>
@@ -613,7 +431,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Move my bottle near coke can" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_fractal_bottle_matching.mp4" type="video/mp4">
               </video>
             </div>
@@ -621,7 +439,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Move my bottle near coke can" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/simpler_fractal_bottle_variant.mp4" type="video/mp4">
               </video>
             </div>
@@ -638,7 +456,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my leather bag"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
               </video>
             </div>
@@ -646,7 +464,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my cat figurine"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/vlabench_cat.mp4" type="video/mp4">
               </video>
             </div>
@@ -654,7 +472,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my cup"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/vlabench_cup.mp4" type="video/mp4">
               </video>
             </div>
@@ -663,7 +481,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third is-offset-one-sixth">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my miniature house"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/vlabench_house.mp4" type="video/mp4">
               </video>
             </div>
@@ -671,7 +489,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my shoe"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
+              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/vlabench_shoe.mp4" type="video/mp4">
               </video>
             </div>
@@ -690,7 +508,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">WidowX (Bridge)</h4>
-        <img src="./static/images/table3.png" alt="Table 3 Results" class="hover-effect" style="width:100%; height: auto;">
+        <img src="./static/images/table3.png" alt="Table 3 Results" style="width:100%;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             On the WidowX arm using the Bridge dataset, tasks involve precise pick-and-place in cluttered scenes. 
@@ -705,7 +523,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">Google Robot (Fractal)</h4>
-        <img src="./static/images/table2.png" alt="Table 2 Results" class="hover-effect" style="width:100%; height: auto;">
+        <img src="./static/images/table2.png" alt="Table 2 Results" style="width:100%;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             We evaluate robustness on the Google Robot (Fractal) across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks. 
@@ -720,7 +538,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">Personalized-VLABench</h4>
-        <img src="./static/images/table4.png" alt="Table 4 Results" class="hover-effect" style="width:100%; height: auto;">
+        <img src="./static/images/table4.png" alt="Table 4 Results" style="width:100%;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             In multi-view selection tasks with a Franka Emika Panda, the agent must handle occlusion and consistency across front, side, and wrist cameras.
@@ -735,7 +553,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">Real-world Performance</h4>
-        <img src="./static/images/figure5.png" alt="Real-world Results" class="hover-effect" style="width:100%; height: auto;">
+        <img src="./static/images/figure5.png" alt="Real-world Results" style="width:100%;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             We validate VAP on a physical tabletop setup with a SO-101 arm using 8 everyday object categories. 
@@ -790,6 +608,20 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     </div>
   </div>
 </footer>
+
+<script>
+  function scrollCarousel(direction) {
+    const track = document.getElementById('videoTrack');
+    // 비디오 카드 너비(320) + gap(20) = 340px 씩 이동
+    const scrollAmount = 340; 
+    
+    if (direction === 1) {
+      track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    } else {
+      track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  }
+</script>
 
 </body>
 </html>
