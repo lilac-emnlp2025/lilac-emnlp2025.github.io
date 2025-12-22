@@ -122,39 +122,60 @@
         width: 100% !important;
         overflow: visible !important;
         position: relative;
+        height: auto !important;
+        min-height: auto !important;
       }
 
       .carousel .slider-container {
         overflow-x: hidden !important;
+        height: auto !important;
       }
 
       .carousel .slider {
         overflow-x: hidden !important;
+        height: auto !important;
+        display: flex !important;
+        align-items: center !important;
       }
 
       /* Force single slide on mobile */
       .carousel .slider-item {
         width: 100% !important;
         flex: 0 0 100% !important;
+        height: auto !important;
+      }
+
+      .carousel .item {
+        height: auto !important;
       }
 
       /* [Fix 5] Video Sizing on Mobile */
       .carousel-video {
-        height: auto !important;
-        width: 100% !important;
+        width: calc(100vw - 3rem) !important;  /* Full width minus padding */
         max-width: 100% !important;
-        aspect-ratio: 16/9;
+        height: auto !important;
+        max-height: 300px !important;  /* Fixed max height for consistency */
+        object-fit: contain !important;  /* Maintain aspect ratio, show full video */
+        background-color: #000 !important;  /* Keep black bars if needed */
+        border-radius: 8px !important;
+        display: block !important;
+        margin: 0 auto !important;
       }
 
       .carousel-item-container {
-        padding: 10px !important;
+        padding: 1rem !important;
         width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
       }
 
       .carousel-item-container p {
         font-size: 0.9rem !important;
         margin-top: 0.5rem !important;
         padding: 0 0.5rem !important;
+        text-align: center;
       }
 
       /* [Fix 6] Subtitle Spacing */
