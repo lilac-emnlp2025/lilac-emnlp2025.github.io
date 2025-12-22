@@ -27,45 +27,68 @@
   <script src="./static/js/index.js"></script>
 
   <style>
-    /* 1. Interactive Hover Effect (Subtle) */
+    /* 1. Interactive Hover Effect (Desktop & Mobile) */
     .hover-effect {
       transition: transform 0.3s ease, box-shadow 0.3s ease;
-      border-radius: 10px; /* Slight rounding for smoother look */
+      border-radius: 10px;
     }
     
     .hover-effect:hover {
-      transform: translateY(-5px) scale(1.01); /* Slight lift */
-      box-shadow: 0 10px 20px rgba(0,0,0,0.15); /* Soft shadow */
+      transform: translateY(-5px) scale(1.01);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
     }
 
-    /* 2. Carousel Layout Fixes */
-    /* Container for Video + Text */
+    /* 2. Carousel Layout (Desktop Default) */
     .carousel-item-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      min-height: 340px; /* Fixed height container to prevent jumping */
+      min-height: 340px; 
       height: auto;
       padding-bottom: 10px;
     }
 
-    /* Video Sizing */
     .carousel-video {
-      height: 280px; /* Force fixed height */
-      width: auto;   /* Maintain aspect ratio */
-      object-fit: contain; /* Ensure full video is visible */
+      height: 280px; /* Desktop: Fixed height for alignment */
+      width: auto;   
+      object-fit: contain;
       border-radius: 10px;
-      margin-bottom: 15px; /* Space between video and text */
-      background-color: #000; /* Letterboxing background */
+      margin-bottom: 15px;
+      background-color: #000;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
-    /* Caption Styling */
     .carousel-caption {
       font-size: 1.1rem;
       font-weight: 600;
       color: #4a4a4a;
+    }
+
+    /* 3. Mobile Optimization (Responsive) */
+    @media screen and (max-width: 768px) {
+      /* Title Sizing */
+      .publication-title {
+        font-size: 2rem !important;
+      }
+      
+      /* Reset Video Height for Mobile */
+      .carousel-item-container {
+        min-height: auto !important;
+      }
+      
+      .carousel-video {
+        height: auto !important;   /* Let height adjust automatically */
+        width: 100% !important;    /* Fill the screen width */
+        max-width: 100% !important;
+        margin-bottom: 10px;
+      }
+      
+      /* Adjust margins */
+      .hero-body {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+      }
     }
   </style>
 </head>
