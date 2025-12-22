@@ -105,40 +105,81 @@
   <div class="container is-max-desktop">
     <div class="hero-body">
       
-      <img src="./static/images/banner.png" alt="VAP Banner" style="width: 100%; margin-bottom: 2rem;"/>
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-full-width">
+          <img src="./static/images/banner.png" alt="VAP Banner" style="width: 100%; border-radius: 10px;"/>
+          <div class="content has-text-justified" style="margin-top: 15px;">
+            <p>
+              <strong>Figure 1. VAP Concept.</strong> 
+              Typically, VLA models struggle with personalized commands like "bring <em>my</em> cup". 
+              VAP bridges this gap by grounding the user-specific object from reference images and injecting a visual prompt (highlight) directly into the robot's observation.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
       
       <div id="results-carousel" class="carousel results-carousel">
         
-        <div class="item item-camera">
-          <video poster="" id="camera" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
-          </video>
+        <div class="item has-text-centered"> <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+            <video poster="" id="camera" autoplay controls muted loop playsinline 
+                   style="max-height: 400px; width: auto; border-radius: 10px;"> <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
+            </video>
+            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
+              "Put my camera on towel"
+            </p>
+          </div>
         </div>
         
-        <div class="item item-pen">
-          <video poster="" id="pen" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
-          </video>
+        <div class="item has-text-centered">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+            <video poster="" id="pen" autoplay controls muted loop playsinline 
+                   style="max-height: 400px; width: auto; border-radius: 10px;">
+              <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
+            </video>
+            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
+              "Pick my pen holder"
+            </p>
+          </div>
         </div>
 
-        <div class="item item-bag">
-          <video poster="" id="bag" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
-          </video>
+        <div class="item has-text-centered">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+            <video poster="" id="bag" autoplay controls muted loop playsinline 
+                   style="max-height: 400px; width: auto; border-radius: 10px;">
+              <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
+            </video>
+            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
+              "Select my leather bag"
+            </p>
+          </div>
         </div>
 
-        <div class="item item-shaver">
-          <video poster="" id="shaver" autoplay controls muted loop playsinline height="100%">
-            <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
-          </video>
+        <div class="item has-text-centered">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+            <video poster="" id="shaver" autoplay controls muted loop playsinline 
+                   style="max-height: 400px; width: auto; border-radius: 10px;">
+              <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
+            </video>
+            <p class="is-size-6 has-text-weight-semibold" style="margin-top: 10px;">
+              "Pick my shaver"
+            </p>
+          </div>
         </div>
 
       </div>
-
-      <h2 class="subtitle has-text-centered" style="margin-top: 1rem;">
-        VAP enables frozen VLA models to manipulate user-specific objects (e.g., "<i>my</i> cup") among visually similar distractors without any training.
-      </h2>
       
+      <h2 class="subtitle has-text-centered" style="margin-top: 1.5rem;">
+        <span class="dnerf">VAP</span> enables frozen VLA models to manipulate user-specific objects among visually similar distractors.
+      </h2>
+
     </div>
   </div>
 </section>
