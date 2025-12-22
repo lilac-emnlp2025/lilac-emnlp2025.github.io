@@ -27,31 +27,31 @@
   <script src="./static/js/index.js"></script>
 
   <style>
-    /* 1. Interactive Hover Effect (Desktop & Mobile) */
+    /* 1. Interactive Hover Effect (Subtle & Safe) */
     .hover-effect {
       transition: transform 0.3s ease, box-shadow 0.3s ease;
-      border-radius: 10px;
+      border-radius: 8px; /* 살짝 둥글게 */
     }
     
     .hover-effect:hover {
-      transform: translateY(-5px) scale(1.01);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+      transform: translateY(-5px); /* 위로 살짝 뜸 */
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15); /* 부드러운 그림자 */
     }
 
-    /* 2. Carousel Layout (Desktop Default) */
+    /* 2. Carousel Layout Logic */
     .carousel-item-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      min-height: 340px; 
-      height: auto;
       padding-bottom: 10px;
     }
 
+    /* PC Default Style */
     .carousel-video {
-      height: 280px; /* Desktop: Fixed height for alignment */
-      width: auto;   
+      height: 280px;       /* PC에서는 높이 고정 (정렬 예쁨) */
+      width: auto;         /* 비율 유지 */
+      max-width: 100%;     /* 부모 영역 넘침 방지 */
       object-fit: contain;
       border-radius: 10px;
       margin-bottom: 15px;
@@ -59,36 +59,39 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
-    .carousel-caption {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #4a4a4a;
-    }
-
-    /* 3. Mobile Optimization (Responsive) */
+    /* 3. Mobile Optimization (Crucial Fix) */
     @media screen and (max-width: 768px) {
-      /* Title Sizing */
+      /* 제목 크기 조절 */
       .publication-title {
         font-size: 2rem !important;
       }
       
-      /* Reset Video Height for Mobile */
-      .carousel-item-container {
-        min-height: auto !important;
-      }
-      
+      /* 모바일에서는 높이 고정을 풀고, 너비를 화면에 꽉 채움 */
       .carousel-video {
-        height: auto !important;   /* Let height adjust automatically */
-        width: 100% !important;    /* Fill the screen width */
+        height: auto !important;   
+        width: 100% !important;    
         max-width: 100% !important;
         margin-bottom: 10px;
       }
-      
-      /* Adjust margins */
-      .hero-body {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+
+      /* 배너 이미지도 모바일에서 꽉 차게 */
+      .hero-body img {
+        max-width: 100% !important;
+        height: auto !important;
       }
+      
+      /* 좌우 여백 확보 */
+      .container {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+    }
+
+    /* Caption Styling */
+    .carousel-caption {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4a4a4a;
     }
   </style>
 </head>
@@ -173,7 +176,7 @@
       
       <div class="columns is-centered has-text-centered" style="margin-bottom: 2rem;">
         <div class="column is-full-width">
-          <img src="./static/images/banner.png" alt="VAP Banner" class="hover-effect" style="width: 100%;"/>
+          <img src="./static/images/banner.png" alt="VAP Banner" class="hover-effect" style="width: 100%; height: auto;"/>
         </div>
       </div>
 
@@ -287,7 +290,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <img src="./static/images/pipeline.png"
                alt="VAP Pipeline"
                class="hover-effect"
-               style="width: 100%; max-width: 900px;"/>
+               style="width: 100%; max-width: 900px; height: auto;"/>
         </div>
         <div class="content has-text-justified" style="margin-top: 1rem;">
           <p>
@@ -311,7 +314,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <img src="./static/images/benchmarks.png"
                alt="Benchmarks Overview"
                class="hover-effect"
-               style="width: 100%; max-width: 1000px;"/>
+               style="width: 100%; max-width: 1000px; height: auto;"/>
         </div>
         <div class="content has-text-justified" style="margin-top: 1rem;">
           <p>
@@ -357,7 +360,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Put my camera on towel"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
               </video>
             </div>
@@ -365,7 +368,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Put my owl figurine on plate"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_bridge_owl.mp4" type="video/mp4">
               </video>
             </div>
@@ -373,7 +376,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Pick my shaver"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
               </video>
             </div>
@@ -381,7 +384,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Put my straw cup in basket"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_bridge_straw_cup.mp4" type="video/mp4">
               </video>
             </div>
@@ -398,7 +401,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
               </video>
             </div>
@@ -406,7 +409,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_fractal_pen_holder_variant.mp4" type="video/mp4">
               </video>
             </div>
@@ -414,7 +417,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Move my bottle near coke can" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_fractal_bottle_matching.mp4" type="video/mp4">
               </video>
             </div>
@@ -422,7 +425,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-half">
             <div class="content">
               <p class="has-text-weight-semibold">"Move my bottle near coke can" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/simpler_fractal_bottle_variant.mp4" type="video/mp4">
               </video>
             </div>
@@ -439,7 +442,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my leather bag"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
               </video>
             </div>
@@ -447,7 +450,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my cat figurine"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/vlabench_cat.mp4" type="video/mp4">
               </video>
             </div>
@@ -455,7 +458,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my cup"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/vlabench_cup.mp4" type="video/mp4">
               </video>
             </div>
@@ -464,7 +467,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third is-offset-one-sixth">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my miniature house"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/vlabench_house.mp4" type="video/mp4">
               </video>
             </div>
@@ -472,7 +475,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
           <div class="column is-one-third">
             <div class="content">
               <p class="has-text-weight-semibold">"Select my shoe"</p>
-              <video autoplay controls muted loop playsinline height="100%" class="hover-effect">
+              <video autoplay controls muted loop playsinline height="100%" class="hover-effect" style="width: 100%; height: auto;">
                 <source src="./static/videos/vlabench_shoe.mp4" type="video/mp4">
               </video>
             </div>
@@ -491,7 +494,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">WidowX (Bridge)</h4>
-        <img src="./static/images/table3.png" alt="Table 3 Results" class="hover-effect" style="width:100%;">
+        <img src="./static/images/table3.png" alt="Table 3 Results" class="hover-effect" style="width:100%; height: auto;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             On the WidowX arm using the Bridge dataset, tasks involve precise pick-and-place in cluttered scenes. 
@@ -506,7 +509,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">Google Robot (Fractal)</h4>
-        <img src="./static/images/table2.png" alt="Table 2 Results" class="hover-effect" style="width:100%;">
+        <img src="./static/images/table2.png" alt="Table 2 Results" class="hover-effect" style="width:100%; height: auto;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             We evaluate robustness on the Google Robot (Fractal) across 'Visual Matching' (seen environments) and 'Visual Variant' (unseen backgrounds/lighting) tracks. 
@@ -521,7 +524,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">Personalized-VLABench</h4>
-        <img src="./static/images/table4.png" alt="Table 4 Results" class="hover-effect" style="width:100%;">
+        <img src="./static/images/table4.png" alt="Table 4 Results" class="hover-effect" style="width:100%; height: auto;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             In multi-view selection tasks with a Franka Emika Panda, the agent must handle occlusion and consistency across front, side, and wrist cameras.
@@ -536,7 +539,7 @@ Experiments show that VAP consistently outperforms generic policies and token-le
     <div class="columns is-centered">
       <div class="column is-four-fifths has-text-centered">
         <h4 class="title is-5">Real-world Performance</h4>
-        <img src="./static/images/figure5.png" alt="Real-world Results" class="hover-effect" style="width:100%;">
+        <img src="./static/images/figure5.png" alt="Real-world Results" class="hover-effect" style="width:100%; height: auto;">
         <div class="content has-text-justified" style="margin-top: 0.5rem;">
           <p>
             We validate VAP on a physical tabletop setup with a SO-101 arm using 8 everyday object categories. 
