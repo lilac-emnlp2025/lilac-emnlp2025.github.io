@@ -68,7 +68,7 @@
     }
 
     .video-card {
-      flex: 0 0 300px; /* [PC] 기본 카드 너비 */
+      flex: 0 0 460px; /* [PC] 두 개 카드가 보이도록 너비 확대 */
       scroll-snap-align: center; /* 스크롤 시 중앙 정렬 */
       background: white;
       border-radius: 10px;
@@ -80,7 +80,8 @@
 
     .video-card video {
       width: 100%;
-      height: 225px; /* 영상 높이 통일 */
+      height: auto;
+      aspect-ratio: 32 / 27; /* merged real-world aspect (640x540) */
       object-fit: contain; /* 비율 유지 */
       background: #000;
       border-radius: 10px;
@@ -91,6 +92,51 @@
       font-weight: 600;
       font-size: 0.9rem;
       color: #333;
+      text-align: center;
+    }
+
+    .real-world-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 1rem;
+    }
+
+    .real-world-card {
+      background: #fff;
+      border: 1px solid #ececec;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    .real-world-views {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas:
+        "front front"
+        "side wrist";
+      gap: 10px;
+      align-items: start;
+    }
+
+    .view-front { grid-area: front; }
+    .view-side { grid-area: side; }
+    .view-wrist { grid-area: wrist; }
+
+    .real-world-views video {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: contain;
+      background: #000;
+      border-radius: 10px;
+    }
+
+    .view-label {
+      margin-top: 4px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #444;
       text-align: center;
     }
 
@@ -146,6 +192,18 @@
       }
       .prev-btn { left: 5px; }
       .next-btn { right: 5px; }
+
+      .real-world-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .real-world-views {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "front"
+          "side"
+          "wrist";
+      }
     }
   </style>
 </head>
@@ -233,6 +291,34 @@
           
           <div class="video-card">
             <video autoplay controls muted loop playsinline poster="">
+              <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Put my stuffed toy into the plastic bowl"</p>
+          </div>
+
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline poster="">
+              <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Put my brother's dog figurine and my ornament into the plastic bowl"</p>
+          </div>
+
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline poster="">
+              <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Put my pouch into the plastic bowl"</p>
+          </div>
+
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline poster="">
+              <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
+            </video>
+            <p class="video-caption">"Put my cat figurine and my brother's owl figurine into the plastic bowl"</p>
+          </div>
+
+          <div class="video-card">
+            <video autoplay controls muted loop playsinline poster="">
               <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
             </video>
             <p class="video-caption">"Put my camera on towel"</p>
@@ -254,9 +340,9 @@
 
           <div class="video-card">
             <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
+              <source src="./static/videos/vlabench_cat.mp4" type="video/mp4">
             </video>
-            <p class="video-caption">"Pick my shaver"</p>
+            <p class="video-caption">"Select my cat figurine"</p>
           </div>
 
         </div>
@@ -486,6 +572,257 @@ Experiments show that VAP consistently outperforms generic policies and token-le
               <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
                 <source src="./static/videos/vlabench_shoe.mp4" type="video/mp4">
               </video>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="title is-4" style="margin-top: 2.5rem;">4. Real-world Examples (SO-101)</h3>
+        <div class="content has-text-justified">
+          <p>
+            Each example shows three synchronized camera views: <strong>front</strong> (cam1), <strong>side</strong> (cam3), and <strong>wrist</strong> (cam2), arranged in that order.
+          </p>
+        </div>
+        <div class="real-world-grid">
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Point at my cup"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_cup/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_cup/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_cup/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Point at my plushie"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_plushie/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_plushie/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_plushie/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Point at my slipper"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_slipper/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_slipper/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_slipper/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Point at my vase"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_vase/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_vase/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/point_at_my_vase/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Put my plant into the plastic bowl"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_plant_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_plant_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_plant_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Put my pouch into the plastic bowl"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Put my scrubber into the plastic bowl"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_scrubber_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_scrubber_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_scrubber_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Put my stuffed toy into the plastic bowl"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="title is-4" style="margin-top: 2.5rem;">5. Multi-user Scenario (SO-101)</h3>
+        <div class="real-world-grid">
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Put my cat figurine and my brother's owl figurine into the plastic bowl"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="real-world-card">
+            <p class="has-text-weight-semibold">"Put my brother's dog figurine and my ornament into the plastic bowl"</p>
+            <div class="real-world-views">
+              <div class="view-front">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Front view (cam1)</div>
+              </div>
+              <div class="view-side">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Side view (cam3)</div>
+              </div>
+              <div class="view-wrist">
+                <video autoplay controls muted loop playsinline>
+                  <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
+                </video>
+                <div class="view-label">Wrist view (cam2)</div>
+              </div>
             </div>
           </div>
         </div>
