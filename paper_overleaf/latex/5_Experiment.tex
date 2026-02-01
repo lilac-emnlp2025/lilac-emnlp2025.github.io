@@ -1,0 +1,392 @@
+
+
+
+\vspace{-2mm}
+\section{Experiments}
+\label{sec:experiments}
+\vspace{-1mm}
+
+
+
+
+
+
+
+\begin{table*}[!t]
+    \caption{Efficiency (Time, \# LLM Calls and API Usage) comparison of \textsc{\Ours} and its competitors for the three benchmarks.}
+    \vspace{-3.5mm}
+    \label{tab:retrieval_efficiency}
+    \begin{center}
+    \begin{small}
+    \scalebox{0.82}{
+    \renewcommand{\arraystretch}{0.95}
+    \resizebox{1.2\textwidth}{!}{
+    \begin{tabular}{llrrrrrrrr}
+    
+        \toprule
+        \multirow{2}{*}{Dataset} & \multirow{2}{*}{Algorithm} & 
+        \multicolumn{4}{c}{Time (ms)} & \multirow{2}{*}{\# LLM Calls} &
+        \multicolumn{3}{c}{API Usage} \\
+        \cmidrule(lr){3-6}\cmidrule(lr){8-10}
+        & & Total & LLM & Vector Search & Embedding & & \# Input Toks & \# Output Toks & \$ \\
+        \midrule
+        
+        \multirow{5}{*}{\MultimodalQA}
+        & \textsc{VisRAG}  & 371    & 0      & 218   & 153 & 0.00 & 0      & 0     & 0.0000 \\
+        & \textsc{ColPali} & 9,849  & 0      & 9,210 & 639 & 0.00 & 0      & 0     & 0.0000 \\
+        & \textsc{LILaC}   & 19,528 & 15,943 & 3,153 & 432 & 1.00 & 1,165  & 1,119 & 0.0115 \\
+        & \textsc{IRCoT}   & 95,744 & 95,140 & 119   & 484 & 5.44 & 41,943 & 3,296 & 0.0752 \\
+        & \textsc{\Ours}   & 114,591& 113,642& 538   & 411 & 7.92 & 48,863 & 4,785 & 0.1109 \\
+        \midrule
+        
+        \multirow{5}{*}{\MMCoQA}
+        & \textsc{VisRAG}  & 362    & 0      & 215   & 147 & 0.00 & 0      & 0     & 0.0000 \\
+        & \textsc{ColPali} & 1,836  & 0      & 1,173 & 663 & 0.00 & 0      & 0     & 0.0000 \\
+        & \textsc{LiLaC}   & 20,244 & 16,879 & 2,977 & 388 & 1.00 & 1,160  & 1,041 & 0.0107 \\
+        & \textsc{IRCoT}   & 97,816 & 97,220 & 116   & 479 & 5.61 & 52,286 & 3,360 & 0.0753 \\
+        & \textsc{\Ours}   & 105,355& 104,630& 366   & 359 & 7.31 & 53,149 & 4,151 & 0.1037 \\ 
+        \midrule
+        
+        \multirow{5}{*}{\WebQA}
+        & \textsc{VisRAG}  & 386    & 0      & 225   & 161 & 0.00 & 0      & 0     & 0.0000 \\
+        & \textsc{ColPali} & 7,919  & 0      & 7,298 & 621 & 0.00 & 0      & 0     & 0.0000 \\
+        & \textsc{LILaC}   & 19,187 & 14,822 & 3,782 & 583 & 1.00 & 1,162  & 737   & 0.0077 \\
+        & \textsc{IRCoT}   & 173,815& 173,011& 152   & 651 & 6.94 & 65,167 & 3,913 & 0.1082 \\
+        & \textsc{\Ours}   & 128,748& 127,664& 581   & 505 & 8.61 & 64,683 & 5,159 & 0.1278 \\
+        \bottomrule
+        
+    \end{tabular}
+    }
+    \renewcommand{\arraystretch}{1.0}
+    }
+    \end{small}
+    \end{center}
+    \vspace{-4mm}
+\end{table*}
+
+
+
+
+
+
+
+
+\begin{table*}[htbp]
+    \caption{Ablation study analyzing retrieval accuracy and efficiency of different \textsc{\Ours} variants.}
+    \vspace{-3.5mm}
+    \label{tab:ablation_study}
+    \begin{center}
+    \begin{small}
+    \scalebox{0.82}{
+    \renewcommand{\arraystretch}{0.95}
+    \resizebox{1.2\textwidth}{!}{
+    \begin{tabular}{llccrcccc}
+    
+        \toprule
+        \multirow{2}{*}{Dataset} & \multirow{2}{*}{Variation} &
+        \multicolumn{2}{c}{Retrieval Accuracy} &
+        \multicolumn{5}{c}{Efficiency} \\
+        \cmidrule(lr){3-4}\cmidrule(lr){5-9}
+        & & R@10 & MRR@10 & Time (ms) & \# LLM Calls & \# Input Toks & \# Output Toks & \$ \\
+        \midrule
+        
+        \multirow{6}{*}{\footnotesize \MultimodalQA}
+        & \textsc{\OurFullName}                        & 85.82 & 86.82 & 
+                                                    117,651 & 7.97 & 49,153 & 4,812 & 0.1111 \\
+                                                    
+        & w/o Backtracking Orchestration        & 79.26 & 84.31 &
+                                                    211,951 & 12.53 & 78,864 & 6,113 & 0.1502 \\
+                                                    
+        & w/o LLM Reasoning in traversal agent  & 78.04 & 83.97 & 
+                                                    168,780 & 7.64 & 45,079 & 4,203 & 0.0887 \\
+                                                    
+        & w/o Global Hop                        & 75.79 & 82.56 & 
+                                                    85,417 & 7.02 & 51,839 & 4,137 & 0.1039 \\
+                                                    
+        & w/o Vector Granularity                & 83.16 & 85.43 &
+                                                    116,918 & 8.28 & 55,281 & 5,179 & 0.1158 \\
+                                                    
+        & w/o Subquery Planner                  & 76.2 & 83.77 & 
+                                                    66,974 & 5.31 & 35,984 & 3,335 & 0.0765 \\
+        \midrule
+        
+        \multirow{6}{*}{\WebQA}
+        & \textsc{\OurFullName}                        & 81.91 & 89.24 & 
+                                                    126,567 & 8.55 & 63,971 & 5,103 & 0.1270 \\
+                                                    
+        & w/o Backtracking Orchestration        & 77.45 & 87.62 & 
+                                                    228,934 & 13.77 & 89,244 & 7,214 & 0.1715 \\
+                                                    
+        & w/o LLM Reasoning in traversal agent  & 78.92 & 88.82 & 
+                                                    135,274 & 7.57 & 50,501 & 4,275 & 0.0960 \\
+                                                    
+        & w/o Global Hop                        & 73.30 & 86.83 & 
+                                                    93,115 & 9.05 & 68,483 & 4,082 & 0.1247 \\
+                                                    
+        & w/o Vector Granularity                & 79.21 & 87.77 &
+                                                    132,972 & 8.72 & 66,201 & 5,319 & 0.1290 \\
+                                                    
+        & w/o Subquery Planner                  & 76.38 & 89.95 & 
+                                                    85,583 & 5.40 & 40,721 & 3,358 & 0.0820 \\
+        \bottomrule
+        
+    \end{tabular}
+    }
+    \renewcommand{\arraystretch}{1.0}
+    }
+    \end{small}
+    \end{center}
+    \vspace{-6mm}
+\end{table*}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Experimental Setups}
+\vspace{-1mm}
+
+
+\noindent\textbf{Datasets and evaluation metrics.}
+We evaluate open-domain multimodal \emph{component} retrieval and downstream QA on three benchmarks: \textsc{MultimodalQA}~\cite{multimodalqa}, \textsc{MMCoQA}~\cite{mmcoqa}, and \textsc{WebQA}~\cite{webqa}.
+Following \textsc{LILaC}~\cite{1_lilac}, we use the URL-annotated setting to reconstruct realistic webpage-style corpora, parsing each page into multimodal components (paragraphs, tables, images).
+This yields \MultimodalQA (3,235 pages, avg. $\sim$37 components), \MMCoQA (453 pages, avg. $\sim$32 components), and \WebQA (7,662 pages, avg. $\sim$13 components).
+Consistent with prior work~\cite{1_lilac}, we report retrieval Recall@$k$ (R@$k$, $k\in\{1,2,5,10\}$) and MRR@10: R@$k$ checks whether at least one ground-truth component appears in the top-$k$ list, and MRR@10 captures the rank of the first relevant component.
+For end-to-end QA, we feed the top-$10$ retrieved components into the same multimodal LLM and report Exact Match (EM) and token-level F1.
+
+\vspace{-1mm}
+\noindent\textbf{Compared methods.}
+We compare \textsc{\Ours} with strong baselines spanning graph traversal, agentic retrieval, and single-shot indexing.
+We include \textsc{LILaC}~\cite{1_lilac}, a layered-graph retriever designed for multi-hop scenarios, and \textsc{IRCoT}~\cite{9_ircot}, an agentic retriever that interleaves retrieval with chain-of-thought reasoning.
+Since \textsc{IRCoT} was originally proposed for text-only corpora, we adapt it to our multimodal setting by (i) replacing its retriever with the same multimodal embedder used throughout our experiments and (ii) using the same multimodal LLM for reasoning and generation over multimodal components.
+For \emph{VisRAG} approaches, we employ \textsc{VisRAG-Ret}~\cite{3_visrag}, which directly encodes document images via VLMs, and \textsc{ColPali}~\cite{4_colpali}, which uses late-interaction multi-vector embeddings from document images.
+We also compare with \textsc{NV-Embed-v2}~\cite{nvembedv2}, a \emph{TextRAG} baseline that embeds textualized components.
+
+\vspace{-1mm}
+\noindent\textbf{Model configurations.}
+To ensure fair comparison, we standardize backbone models across all methods whenever applicable.
+We use \textsc{MM-Embed}~\cite{mmembed} as the unified multimodal embedder, and the \textsc{OpenAI API} (\textsc{gpt-5})~\cite{gpt5} with \texttt{reasoning\_effort = low} as the multimodal LLM for all planning, reasoning, reranking, and generation steps.
+
+
+% \noindent\textbf{Datasets \& evaluation metrics.}
+% We evaluate open-domain multimodal component retrieval and downstream QA on three benchmarks: \textsc{MultimodalQA}~\cite{multimodalqa}, \textsc{MMCoQA}~\cite{mmcoqa}, and \textsc{WebQA}~\cite{webqa}. 
+% Following \textsc{LILaC}~\cite{1_lilac}, we use the URL-annotated setting to reconstruct realistic webpage-style corpora, parsing them into multimodal components (paragraphs, tables, images). 
+% This yields \MultimodalQA (3,235 pages, avg. $\sim$37 components), \MMCoQA (453 pages, avg. $\sim$32 components), and \WebQA (7,662 pages, avg. $\sim$13 components).
+
+% Consistent with prior work~\cite{1_lilac}, we evaluate retrieval using Recall@$k$ (R@$k$) for $k\in\{1,2,5,10\}$ and Mean Reciprocal Rank (MRR@10).
+% R@$k$ measures the presence of at least one ground-truth component in the top-$k$ results, while MRR@10 captures the rank of the first relevant component. 
+% For end-to-end QA, we feed the top-$10$ retrieved components into a multimodal LLM and report Exact Match (EM) and token-level F1.
+
+
+% \noindent\textbf{Compared methods.}
+% We compare \textsc{\Ours} against several state-of-the-art baselines across different retrieval paradigms.
+% We mainly compare \textsc{LILaC}~\cite{1_lilac}, a layered graph retriever for multi-hop scenarios, and \textsc{IRCoT}~\cite{9_ircot}, an agentic retriever that interleaves retrieval with chain-of-thought reasoning. 
+% IRCoT는 text에 대해서만 제안되었지만, multimodal embedder과 multimodal LLM을 사용하여 multimodal content에 대해 대응 가능하게끔 변형을 가하였음.
+% For \emph{VisRAG} approaches, we employ \textsc{VisRAG-Ret}, which directly encodes document images via VLMs~\cite{3_visrag}, and \textsc{ColPali}, which utilizes late-interaction multi-vector embeddings from document images~\cite{4_colpali}.
+% We also compare with \textsc{NV-Embed-v2}, a baseline \emph{TextRAG} method that uses a 7.85B model to embed textualized components~\cite{nvembedv2}.
+
+
+% \noindent\textbf{Model Configurations.} 
+% To ensure a fair and controlled comparison, we standardize the backbone models across all evaluated methods. 
+% Specifically, we employ \textsc{MM-Embed}~\cite{mmembed} as the unified multimodal embedder and utilize the \textsc{OpenAI API} (\textsc{gpt-5})~\cite{gpt5} with \texttt{reasoning\_effort = low} as the multimodal LLM for all reasoning and generation tasks.
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Retrieval Accuracy Comparison}
+\label{sec:retrieval_accuracy}
+\vspace{-1mm}
+
+
+We evaluate open-domain multimodal \emph{component} retrieval on \MultimodalQA, \MMCoQA, and \WebQA\ using Recall@$k$ ($k\in\{1,2,5,10\}$) and MRR@10, with results reported in Table~\ref{tab:retrieval_performance}.
+\textsc{\Ours} achieves the best performance across all three benchmarks and all reported cutoffs, indicating its overall effectiveness.
+Averaged across datasets, \textsc{\Ours} reaches average Recall@10 of 80.26 and average MRR@10 of 83.16, improving over \textsc{LILaC} +22.03\% and +18.60\%, respectively.
+Compared with the strongest agentic baseline \textsc{IRCoT}, \textsc{\Ours} gains 12.88\% Recall@10 and 9.31\% MRR@10.
+The gap is even larger against single-shot embedding-based retrievers.
+
+We analyze two interesting points.
+One is that the largest dataset-specific margin over \textsc{LILaC} appears on \WebQA at higher cutoffs, suggesting that \WebQA more frequently requires \emph{escaping} local neighborhoods to reach dispersed evidence.
+This aligns with \WebQA's construction where ground-truth components are not necessarily adjacent or tightly coupled, making global navigation critical.
+In contrast, the performance gap over \textsc{IRCoT} is most pronounced on the more explicitly multi-hop benchmarks \MultimodalQA and \MMCoQA, where effectively leveraging the underlying link/structure signal (rather than pure global searching) is essential.
+Second, improvements are particularly strong at low-$k$, indicating that \textsc{\Ours} not only increases \emph{coverage} of relevant components but also ranks them substantially earlier.
+
+
+\vspace{-1mm}
+\subsection{End-to-end QA Accuracy Comparison}
+\vspace{-1mm}
+
+
+We measure end-to-end QA performance by feeding the top-$10$ retrieved components into the same multimodal LLM generator for every method, and report EM and token-level F1 in Table~\ref{tab:qa_em_f1}.
+\textsc{\Ours} is consistently the best-performing method on all three datasets, achieving average EM/F1 of 59.63/68.45.
+Relative to \textsc{LILaC}, \textsc{\Ours} improves EM by +16.37\% and F1 by +16.79\% on average, confirming that more reliable evidence discovery yields better grounded generation.
+Compared to \texttt{IRCoT}, \textsc{\Ours} still provides a clear advantage of +8.71\% EM and +7.14\% F1, despite both methods being agentic.
+Dataset-wise, the gains are especially visible on \MMCoQA and \WebQA, consistent with Table~\ref{tab:retrieval_performance} where \textsc{\Ours} yields substantially higher top-$k$ retrieval accuracy.
+
+
+\vspace{-1mm}
+\subsection{Algorithm Efficiency}
+\vspace{-1mm}
+
+
+% We report efficiency metrics in Table~\ref{tab:retrieval_efficiency}, including wall-clock retrieval time (with breakdown into LLM, vector search, and embedding), the number of LLM calls, token usage, and estimated API cost.
+% As expected, single-shot retrievers (\textsc{VisRAG}, \textsc{ColPali}, \textsc{NV-Embed-v2}) are the most efficient in wall-clock latency and incur no LLM API cost during retrieval.
+% Traversal-based methods are more expensive due to iterative decision making.
+% Among them, \textsc{LILaC} is relatively efficient because it uses a small, fixed number of LLM calls (1.00 per query), while \texttt{IRCoT} and \textsc{\Ours} perform multiple reasoning steps.
+% Across datasets, \textsc{\Ours} uses 7.31--8.61 LLM calls per query and costs about \$0.10--\$0.13 per query, while delivering the best retrieval and QA accuracy.
+% Notably, \textsc{\Ours} is comparable in runtime to \texttt{IRCoT}: it is slower on \MultimodalQA and \MMCoQA by +19.68\% and +7.71\%, but substantially faster on \WebQA by 25.93\%, yielding a slightly lower average runtime overall (116.23s vs.\ 122.46s).
+
+
+% %jhyuntodo: 다른 식으로 분석
+% The runtime breakdown highlights a clear bottleneck: for agentic methods, the LLM dominates the end-to-end retrieval time.
+% For \textsc{\Ours}, LLM execution accounts for $\sim$99\% of total latency across datasets (e.g., 113,642ms out of 114,591ms on \MultimodalQA), while vector search and embedding remain below 1\%.
+% This suggests that future efficiency gains will primarily come from reducing LLM calls, shortening prompts (e.g., more compact memory representations), or using cheaper models for easier hops while retaining strong models for ambiguous hops.
+% In contrast, \textsc{ColPali} exhibits a different bottleneck: although it uses no LLM calls, its multi-vector late interaction makes vector search the dominant cost (e.g., 9,210ms vector search out of 9,849ms total on \MultimodalQA).
+% Overall, Table~\ref{tab:retrieval_efficiency} reflects a practical trade-off: \textsc{\Ours} deliberately spends additional computation on adaptive exploration and failure-aware replanning/backtracking, which substantially improves evidence discovery quality and, consequently, downstream QA accuracy.
+
+
+
+Table~\ref{tab:retrieval_efficiency} reports wall-clock retrieval time (with breakdown into LLM, vector search, and embedding), the number of LLM calls, token usage, and estimated API cost.
+As expected, single-shot retrievers (\textsc{VisRAG}, \textsc{ColPali}, \textsc{NV-Embed-v2}) are the fastest and incur no LLM API cost during retrieval.
+Among agentic methods, \textsc{\Ours} shows a slightly lower average runtime than \textsc{IRCoT} (116,231 vs.\ 122,458 ms), which is the strongest agentic baseline: 
+while \textsc{\Ours} executes more reasoning steps (7.31--8.61 vs.\ 5.44--6.94 LLM calls), it uses fewer input tokens and achieves comparable or lower latency overall.
+Notably, \textsc{\Ours} is substantially faster on \WebQA (128,748 vs.\ 173,815 ms; $-25.93\%$), suggesting that structure-aware navigation together with failure-aware re-anchoring reduces unproductive reasoning on large and sparsely connected corpora; 
+The efficiency comes with a moderate increase in API usage compared to \textsc{IRCoT} (\$0.10--\$0.13 vs.\ \$0.075--\$0.108 per query), consistent with our higher retrieval/QA accuracy.
+% , \textsc{\Ours} intentionally spends more computation.
+Relative to \textsc{LILaC}, \textsc{\Ours} is 5.20--6.71$\times$ slower in wall-clock time and incurs 9.64--16.60$\times$ higher API cost, quantifying the additional budget required by adaptive agentic control.
+% Finally, the breakdown shows that for agentic retrievers the LLM dominates end-to-end time (e.g., for \textsc{\Ours} $\sim$99\% of latency), whereas vector search and embedding contribute $<1\%$, indicating that future speedups should primarily target reducing LLM calls/prompt length or routing easy hops to cheaper models.
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Ablation Study}
+\vspace{-1mm}
+
+
+% Table~\ref{tab:ablation_study} presents an ablation study that isolates the contribution of major design components in \textsc{\Ours}.
+% We evaluate retrieval accuracy together with efficiency on \MultimodalQA and \WebQA.
+% The tested variants remove: (i) \emph{LLM reasoning inside the traversal agent}, (ii) \emph{global hops}, (iii) \emph{adaptive vector-search granularity}, and (iv) the \emph{subquery planner}.
+% First, LLM reasoning inside the traversal agent is crucial not only for accuracy but also for efficient navigation: removing it reduces R@10 by 7.78 points on \MultimodalQA and increases runtime by 43\%, indicating that reasoning helps avoid redundant exploration and reach informative regions more directly.
+% Second, global hops are essential for escaping local neighborhoods: disabling global hops causes the largest accuracy drops on both \MultimodalQA (R@10: 75.79) and \WebQA (R@10: 73.30).
+% The effect is particularly strong on \WebQA (drop of 8.61 points), consistent with the dataset-level behavior discussed in \S\ref{sec:retrieval_accuracy}.
+% Third, the subquery planner exhibits a clear accuracy--efficiency trade-off.
+% Removing replanning substantially reduces LLM calls and cost, but significantly degrades recall, suggesting that adaptive replanning is expensive but necessary for recovering from early planning mistakes.
+
+% Table~\ref{tab:ablation_study} isolates the contribution of each major design component in \textsc{\Ours} on \MultimodalQA and \WebQA, reporting retrieval accuracy (R@10, MRR@10) together with efficiency.
+% \MMCoQA는 제외하였고, conversational dataset이기에 conversation의 기록이 실험 결과를 왜곡시킬 수 있겠다 생각했다.
+% Due to OpenAI API costs, we run these ablations on a representative 10\% subset of each dataset.
+
+Table~\ref{tab:ablation_study} isolates the contribution of each major design component in \textsc{\Ours} on \MultimodalQA and \WebQA, reporting retrieval accuracy (R@10, MRR@10) alongside efficiency.
+We omit \MMCoQA\ from this analysis: because it is conversational, accumulated dialogue history can introduce confounding factors (e.g., varying context length and carryover information) that may blur the impact of individual retrieval modules.
+We run all ablations on a representative 10\% subset of each dataset due to OpenAI API costs.
+(i) \textit{History-aware backtracking orchestration.} 
+Removing backtracking consistently hurts both \emph{effectiveness} and \emph{efficiency}: R@10 drops by 4.46--6.56, while runtime increases by $\sim$80\% and LLM calls rise by 57--61\%.
+This highlights that backtracking prevents wasted hops by adapting effort only when needed.
+It also improves accuracy by returning to more promising anchors and narrowing candidates to the right neighborhood, rather than repeatedly exploring uninformative branches.
+(ii) \textit{LLM reasoning inside the traversal agent.} 
+Disabling LLM reasoning during traversal substantially degrades retrieval and can even \emph{slow down} the search: on \MultimodalQA, R@10 drops by 7.78 and runtime increases by 43\%, despite lower per-step cost.
+We reason that additional replanning and extra iterations were triggered, as traversal is more likely to take ambiguous or unproductive hops without LLM reasoning.
+(iii) \textit{Global hop.}
+Global hops are crucial for escaping local neighborhoods.
+When disabled, R@10 suffers the largest drop (10.03 on \MultimodalQA; 8.61 on \WebQA), even though the variant becomes faster.
+This indicates that neighbor-based traversal alone is insufficient: some questions require jumping across distant regions of the corpus, including multi-hop paths and cases where relevant evidence is not directly linked.
+(iv) \textit{Adaptive vector-search granularity.}
+Removing granularity adaptation yields consistent but smaller drops (about 2.66--2.70 R@10) with minimal efficiency change.
+(v) \textit{Subquery planner.}
+emoving replanning reduces LLM calls and cost substantially (e.g., $-33\%$ to $-37\%$ calls), but causes large recall drops (9.62 on \MultimodalQA; 5.53 on \WebQA).
+Without the option to revise the plan, the Orchestrator is more likely to terminate early once progress stalls, which simultaneously lowers cost and recall.
+This underscores the importance of correcting early planning mistakes through evidence-conditioned replanning.
+
+
+% 해당 실험은 데이터셋 별로 대표성을 잘 보이는 10\%의 샘플로 돌아갔다, OpenAI API의 값 때문에.
+% Removing backtracking consistently degrades both \emph{effectiveness} and \emph{efficiency}: R@10 drops by 4.46$~$6.56, while runtime increases by $\sim$80\% and LLM calls increase by 57--61\%.
+% Backtracking, 구체적으로 cost-aware strategy escalation이 efficiency에 지대한 영향을 끼치는 것을 확인할 수 있고, 또한 promising document로 돌아가 neighbor document로 후보를 올바르게 좁히는 것이 accuracy에도 큰 영향을 끼치는 것을 알 수 있다.
+% Disabling LLM reasoning during traversal significantly hurts retrieval and can even \emph{slow down} the search: on \MultimodalQA, R@10 drops by 7.78 and runtime increases by 43\%, despite a lower cost.
+% 오히려 search가 잘 되지 않음으로써 여러 번 subquery planning이 일어나고, 이로서 오히려 inaccurate하면서도 늦을 search가 일어나게 된다.
+% Global hops are essential for escaping local neighborhoods.
+% Without them, R@10 suffers the largest drop (10.03 on \MultimodalQA; 8.61 on \WebQA), even though the variant becomes faster.
+% Retrieval을 하는 데 Neighbor도 물론 중요하지만, multi-hop이나 아예 연결되지 않은 도큐먼트를 고려하는 것이 매우 중요하다는 것이 보인다.
+% Removing replanning reduces LLM calls and cost substantially (e.g., $-33\%$ to $-37\%$ calls), but causes large recall drops (9.62 on \MultimodalQA; 5.53 on \WebQA).
+% Plan을 바꾼다는 선택지가 없기 때문에 orchestrator가 빠르게 retrieval을 포기하고, 이가 곧 recall과 cost의 동시 하락으로 이어진 것.
+% 이로서 initial error를 수정하는 것에 대한 중요성이 보인다.
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%% Version 1
+
+
+
+
+% Our proposed \textsc{\Ours} extends these by incorporating multi-strategy traversal with evaluation-driven feedback and history-aware backtracking.
+
+% \noindent\textbf{Compared methods.}
+% We compare \textsc{FiF} (reported as \textsc{\Ours} in tables) against representative multimodal retrieval baselines used in prior work:
+% \squishlist
+%     \item \textbf{NV-Embed-v2}: a strong \emph{TextRAG} baseline that embeds textualized components (e.g., linearized tables and text surrogates for visuals) and retrieves by dense similarity.
+%     \item \textbf{VisRAG-Ret}: a \emph{VisRAG} retriever that directly encodes document images (or page screenshots) via a vision-language model and retrieves in a visual embedding space.
+%     \item \textbf{ColPali}: a late-interaction, multi-vector retriever over document images.
+%     \item \textbf{\textsc{LILaC}}: a layered component graph retriever that combines coarse candidate generation with fine-grained late-interaction scoring for multihop multimodal retrieval.
+%     \item \textbf{IRCoT}: an agentic multi-step retriever that \emph{interleaves retrieval with chain-of-thought reasoning}, iteratively generating intermediate reasoning steps and using them to drive subsequent retrieval.
+%     \item \textbf{\textsc{\Ours} (Ours)}: our \textsc{FiF} traversal framework with multi-strategy traversal, evaluation-driven feedback, and history-aware backtracking.
+% \squishend
+%     위 데이터셋 소개 부분 조금 더 간단히 표현
+%     (예시: We employ two SOTA methods of VisRAG approaches - \texttt{VisRAG}, which directly encodes document images via VLMs~\cite{visrag}, and \texttt{ColPali}, which employs late-interaction multi-vector embeddings from document images~\cite{colpali}.
+%     We additionally compare with \texttt{NV-Embed-v2}, a SOTA TextRAG method reported by \texttt{VisRAG}. It utilizes a 7.85B model for embedding textualized components.)
+
+
+
+% \noindent\textbf{Applied multimodal embedding models \& multimodal LLMs.}
+% 우리는 fair한 비교를 위해 모든 알고리즘에서 동일한 multimodal LLM ( \textsc{ChatGPT-5 OpenAI API} with \texttt{reasoning\_effort = low}.)과 multimodal embedder (\textsc{MM-Embed})를 사용한다.
+% We use three multimodal embedders: \texttt{MM-Embed}~\cite{mmembed}, \texttt{UniME}~\cite{unime} and \texttt{mmE5}~\cite{mme5}.
+% Details about the embedding models can be further found in \textsection~\ref{sec:appendix_model_details}.
+% \noindent\textbf{Applied multimodal embedding models \& multimodal LLMs.}
+% To ensure a controlled comparison, we use a single multimodal embedder and a single multimodal LLM backbone across our pipeline.
+% We build a unified component index using \textsc{MM-Embed} as the multimodal embedding model for similarity search.
+% For all LLM-driven modules (e.g., decomposition/planning, traversal evaluation, and answer generation), we use the \textsc{ChatGPT-5 OpenAI API} with \texttt{reasoning\_effort = low}.
+% 위 부분도 담백하게 표현
+% (예시: We use three multimodal embedders: \texttt{MM-Embed}~\cite{mmembed}, \texttt{UniME}~\cite{unime} and \texttt{mmE5}~\cite{mme5}.
+% Details about the embedding models can be further found in \textsection~\ref{sec:appendix_model_details}.)
+
+
+
+
+% \subsection{Retrieval Accuracy Comparison}
+
+% We evaluated retrieval accuracies using Recall@$k$ ($k \in \{1, 2, 5, 10\}$ and MRR@10 across three benchmarks, and its results are reported in Table~\ref{tab:retrieval_performance}.
+% \textsc{\Ours} consistently yields the best performance across all datasets and cutoffs, demonstrating the benefit of casting multimodal subgraph discovery as a feedback-driven sequential traversal process.
+% 구체적으로는, \textsc{LILaC} 대비 Recall@10, MRR@10 기준 22.03\%, 12.88\% 증가하였고, \textsc{IRCoT} 대비 Recall@10, MRR@10 기준 18.60\%, 9.31\% 증가하였다.
+% \textsc{NV-Embed-v2}, \textsc{VisRAG}, \textsc{ColPali} 등의 embedding-based single-knn 기법들과는 더 극심하고 확연한 차이가 나는 것을 확인할 수 있다.
+
+% Analysis를 통해 다음을 알 수 있다.
+% \textsc{LILaC} 기준 \WebQA 데이터셋에서 Recall@10이 24.23\%까지 차이 남으로써 가장 차이가 많이 나는데, 이는 \WebQA 데이터셋은 생성 방식 상 ground truth component들이 붙어 있을 필요가 없어, global hop의 중요성이 대두되는 데이터셋이기 때문이다.
+% 동시에 \textsc{IRCoT}는 graph 구조를 사용하지 않고, global hop만을 진행하기 때문에 \WebQA에서는 성능 차가 recall@10 8.23\%로 차이가 상대적으로 적은 것을 확인할 수 있다.
+% 다만 component 끼리의 연결 구조를 잘 사용해야 하는 \MultimodalQA, \MMCoQA에서는 14.47\%, 16.33\%까지 차이 나는 것을 통해 이러한 연결 구조의 중요성을 파악할 수 있다.
+% 또한, 
+% 또한, Recall@$k$를 볼 때 $k$의 값이 커질수록 

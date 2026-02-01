@@ -2,11 +2,10 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="description"
-        content="Bring My Cup! Personalizing Vision-Language-Action Models with Visual Attentive Prompting">
-  <meta name="keywords" content="VAP, Vision-Language-Action, VLA, Robotics, Personalization">
+  <meta name="description" content="Failure is Feedback: History-Aware Backtracking for Agentic Traversal in Multimodal Graphs. An agentic retriever that turns failures into better plans for open-domain multimodal document retrieval.">
+  <meta name="keywords" content="Failure is Feedback, FiF, agentic retrieval, multimodal retrieval, backtracking, graph traversal, RAG">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bring My Cup! Personalizing Vision-Language-Action Models with Visual Attentive Prompting</title>
+  <title>Failure is Feedback | History-Aware Backtracking for Agentic Traversal in Multimodal Graphs</title>
 
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
   <link rel="stylesheet" href="./static/css/bulma.min.css">
@@ -17,247 +16,72 @@
 
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <style>
-    /* 1. Global Reset (가로 스크롤 방지) */
-    html, body {
-      overflow-x: hidden;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* 2. Banner Image Fix */
-    .banner-container {
-      width: 100%;
-      padding: 0 10px; /* 좌우 여백 */
-      box-sizing: border-box;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-    
-    .banner-image {
-      max-width: 100%; /* 부모 너비 넘지 않음 */
-      height: auto;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      display: block;
-      margin: 0 auto;
-    }
-
-    /* 3. Pure CSS Carousel (모바일 최적화) */
-    .video-slider-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: 1000px; /* PC 최대 너비 */
-      margin: 0 auto;
-      padding: 0 10px; /* 좌우 여백 */
-      box-sizing: border-box;
-    }
-
-    .video-slider {
-      display: flex;
-      gap: 15px;
-      overflow-x: auto; /* 가로 스크롤 활성화 */
-      scroll-snap-type: x mandatory; /* 스냅 기능 */
-      padding-bottom: 10px;
-      -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
-      scrollbar-width: none; /* 파이어폭스 스크롤바 숨김 */
-    }
-
-    .video-slider::-webkit-scrollbar {
-      display: none; /* 크롬/사파리 스크롤바 숨김 */
-    }
-
-    .video-card {
-      flex: 0 0 460px; /* [PC] 두 개 카드가 보이도록 너비 확대 */
-      scroll-snap-align: center; /* 스크롤 시 중앙 정렬 */
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .video-card video {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 32 / 27; /* merged real-world aspect (640x540) */
-      object-fit: contain; /* 비율 유지 */
-      background: #000;
-      border-radius: 10px;
-    }
-
-    .video-caption {
-      margin-top: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: #333;
-      text-align: center;
-    }
-
-    .real-world-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px;
-      margin-top: 1rem;
-    }
-
-    .real-world-card {
-      background: #fff;
-      border: 1px solid #ececec;
-      border-radius: 12px;
-      padding: 14px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-    }
-
-    .real-world-views {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-areas:
-        "front front"
-        "side wrist";
-      gap: 10px;
-      align-items: start;
-    }
-
-    .view-front { grid-area: front; }
-    .view-side { grid-area: side; }
-    .view-wrist { grid-area: wrist; }
-
-    .real-world-views video {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      object-fit: contain;
-      background: #000;
-      border-radius: 10px;
-    }
-
-    .view-label {
-      margin-top: 4px;
-      font-weight: 600;
-      font-size: 0.8rem;
-      color: #444;
-      text-align: center;
-    }
-
-    /* 네비게이션 버튼 (PC/모바일 공통 디자인) */
-    .nav-button {
-      position: absolute;
-      top: 40%; /* 영상 중앙 높이 */
-      transform: translateY(-50%);
-      width: 40px;
-      height: 40px;
-      background: rgba(0,0,0,0.6);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      z-index: 20;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.3s;
-    }
-    .nav-button:hover { background: rgba(0,0,0,0.8); }
-    .prev-btn { left: 0; }
-    .next-btn { right: 0; }
-
-    /* 4. 모바일 전용 스타일 (미디어 쿼리) */
-    @media screen and (max-width: 768px) {
-      .publication-title {
-        font-size: 1.8rem !important;
-      }
-
-      /* 배너: 모바일에서도 꽉 차게 */
-      .banner-image {
-        width: 100%; 
-      }
-
-      /* 비디오 카드: 모바일에서는 화면의 85% 차지 (다음 카드가 살짝 보이게) */
-      .video-card {
-        flex: 0 0 85%; 
-        margin-right: 10px;
-      }
-
-      .video-card video {
-        height: auto; /* 높이 자동 조절 */
-        aspect-ratio: 4/3; /* 비율 고정 */
-      }
-
-      /* 버튼 크기 키움 (터치 쉽게) */
-      .nav-button {
-        width: 45px;
-        height: 45px;
-        font-size: 1.2rem;
-      }
-      .prev-btn { left: 5px; }
-      .next-btn { right: 5px; }
-
-      .real-world-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .real-world-views {
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "front"
-          "side"
-          "wrist";
-      }
-    }
+    html, body { overflow-x: hidden; }
+    body { background: #fcfdff; }
+    .tagline { letter-spacing: .08em; text-transform: uppercase; font-size: 0.9rem; color: #6c6f78; font-weight: 700; }
+    .publication-title { font-family: 'Google Sans', sans-serif; line-height: 1.2; }
+    .hero .publication-authors { margin-top: 0.5rem; }
+    .link-block { margin: 0 6px; }
+    .link-block .button.is-static, .link-block .button[disabled] { background: #f5f6f8; color: #7a7a7a; border-color: #dde2ea; }
+    .figure-frame { background: #f7f9fb; border: 1px solid #e5ecf4; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(28,45,71,0.05); }
+    .figure-frame img { width: 100%; height: auto; border-radius: 8px; display: block; }
+    .figure-caption { color: #4a4a4a; margin-top: 10px; font-size: 0.95rem; }
+    .pill { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #eef2ff; color: #4c51bf; font-weight: 700; font-size: 0.85rem; letter-spacing: .03em; }
+    .highlight-card { border: 1px solid #e5ecf4; border-radius: 12px; padding: 18px; height: 100%; background: white; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+    .section.is-light { background: #f9fbff; }
   </style>
 </head>
 <body>
 
-<section class="hero">
+<section class="hero is-white">
   <div class="hero-body">
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h1 class="title is-1 publication-title">Bring <i>My</i> Cup! ☕<br>Personalizing Vision-Language-Action Models with Visual Attentive Prompting</h1>
-          
-          <div class="is-size-5 publication-authors">
-            <span class="author-block">
-              <a href="https://leesangoh.github.io/" target="_blank">Sangoh Lee</a>
-            </span>,
-            <span class="author-block">
-              <a href="https://sites.google.com/view/sangwoomo" target="_blank">Sangwoo Mo</a>
-            </span>,
-            <span class="author-block">
-              <a href="https://wscrony.github.io/" target="_blank">Wook-Shin Han</a>
-            </span>
-          </div>
+          <p class="tagline">Open-Domain Multimodal Retrieval</p>
+          <h1 class="title is-1 publication-title">
+            Failure is Feedback:<br>History-Aware Backtracking for Agentic Traversal in Multimodal Graphs
+          </h1>
 
           <div class="is-size-5 publication-authors">
-            <span class="author-block">Pohang University of Science and Technology (POSTECH)</span>
+            <span class="author-block">Joohyung Yun</span>,
+            <span class="author-block">Doyup Lee</span>,
+            <span class="author-block">Wook-Shin Han</span>
           </div>
+          <div class="is-size-6 publication-authors">
+            <span class="author-block">POSTECH (CSE · GSAI)</span>,
+            <span class="author-block">DirectorLabs</span>
+          </div>
+          <p class="is-size-6 has-text-weight-semibold" style="margin-top: 0.5rem;">ICML 2026 Submission</p>
 
-          <div class="column has-text-centered">
+          <div class="column has-text-centered" style="margin-top: 1.2rem;">
             <div class="publication-links">
               <span class="link-block">
-                <a href="https://arxiv.org/pdf/2512.20014" class="external-link button is-normal is-rounded is-dark">
+                <a href="./paper.pdf" class="external-link button is-normal is-rounded is-dark">
                   <span class="icon"><i class="fas fa-file-pdf"></i></span>
-                  <span>Paper</span>
+                  <span>Paper (PDF)</span>
                 </a>
               </span>
               <span class="link-block">
-                <a href="https://arxiv.org/abs/2512.20014" class="external-link button is-normal is-rounded is-dark">
+                <button class="button is-normal is-rounded is-static" disabled>
                   <span class="icon"><i class="ai ai-arxiv"></i></span>
-                  <span>arXiv</span>
-                </a>
+                  <span>arXiv (coming soon)</span>
+                </button>
               </span>
+              <!--
               <span class="link-block">
-                <a href="https://github.com/Leesangoh/VAP" class="external-link button is-normal is-rounded is-dark">
+                <a href="#" class="external-link button is-normal is-rounded is-dark">
                   <span class="icon"><i class="fab fa-github"></i></span>
                   <span>Code</span>
                 </a>
               </span>
               <span class="link-block">
-                <a href="https://huggingface.co/leesangoh" class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon"><p style="font-size:18px">🤗</p></span>
+                <a href="#" class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><p style="font-size:18px">🗂️</p></span>
                   <span>Dataset</span>
                 </a>
               </span>
+              -->
             </div>
           </div>
         </div>
@@ -266,130 +90,17 @@
   </div>
 </section>
 
-<section class="hero teaser">
-  <div class="container is-max-desktop">
-    <div class="hero-body" style="padding-top:0;"> <div class="banner-container">
-        <img src="./static/images/banner.png" alt="VAP Banner" class="banner-image"/>
-      </div>
-
-      <div class="columns is-centered has-text-centered" style="margin-bottom: 2rem;">
-        <div class="column is-four-fifths">
-          <div class="content has-text-justified" style="font-size: 1.1rem;">
-            <p>
-              Imagine asking for your favorite coffee mug while getting ready for work, or having a robot fetch your pet’s specific toy from a pile of similar objects. 
-              To be truly useful in daily life, robots must discern the subtle details that distinguish <strong>"a cup"</strong> from <strong>"<i>my</i> cup."</strong>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="video-slider-wrapper">
-        <button class="nav-button prev-btn" onclick="slideVideos(-1)"><i class="fas fa-chevron-left"></i></button>
-        <button class="nav-button next-btn" onclick="slideVideos(1)"><i class="fas fa-chevron-right"></i></button>
-
-        <div class="video-slider" id="videoSlider">
-          
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Put my stuffed toy into the plastic bowl"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Put my brother's dog figurine and my ornament into the plastic bowl"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Put my pouch into the plastic bowl"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam_merged.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Put my cat figurine and my brother's owl figurine into the plastic bowl"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Put my camera on towel"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Pick my pen holder"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Select my leather bag"</p>
-          </div>
-
-          <div class="video-card">
-            <video autoplay controls muted loop playsinline poster="">
-              <source src="./static/videos/vlabench_cat.mp4" type="video/mp4">
-            </video>
-            <p class="video-caption">"Select my cat figurine"</p>
-          </div>
-
-        </div>
-      </div>
-      
-      <h2 class="subtitle has-text-centered" style="margin-top: 1.5rem;">
-        <span class="dnerf" style="font-weight:700;">VAP</span> enables frozen VLA models to manipulate user-specific objects among visually similar distractors.
-      </h2>
-
-    </div>
-  </div>
-</section>
-
-<section class="section hero is-light">
-  <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">From "A Cup" to "<i>MY</i> Cup"</h2>
-        <div class="content has-text-justified">
-          <p>
-            Standard Vision-Language-Action (VLA) models are excellent at understanding generic concepts like "pick up <em>the cup</em>." 
-            However, they fail when users ask for specific instances: <strong>"Bring <em>my</em> cup."</strong>
-            To a generic VLA, your favorite mug is just "a cup" among many others.
-          </p>
-          <p>
-            <strong>Visual Attentive Prompting (VAP)</strong> bridges this gap between <em>semantic understanding</em> and <em>instance-level control</em>.
-            By visually highlighting the target object in the robot's eye, VAP allows existing VLAs to manipulate <strong>unseen personal objects</strong> immediately—<strong>no training, no fine-tuning, just prompting.</strong>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
+<section class="section is-light">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-While Vision-Language-Action (VLA) models generalize well to generic instructions, they struggle with personalized commands such as "bring my cup," where the robot must act on one specific instance among visually similar objects. 
-We study this setting of manipulating personal objects, in which a VLA must identify and control a user-specific object unseen during training using only a few reference images. 
-To address this challenge, we propose <strong>Visual Attentive Prompting (VAP)</strong>, a simple-yet-effective training-free perceptual adapter that equips frozen VLAs with top-down selective attention. 
-VAP treats the reference images as a non-parametric visual memory, grounds the personal object in the scene through open-vocabulary detection and embedding-based matching, and then injects this grounding as a visual prompt by highlighting the object and rewriting the instruction. 
-We construct two simulation benchmarks, Personalized-SIMPLER and Personalized-VLABench, and a real-world tabletop benchmark to evaluate personalized manipulation across multiple robots and tasks.
-Experiments show that VAP consistently outperforms generic policies and token-learning baselines in both success rate and correct-object manipulation, helping to bridge the gap between semantic understanding and instance-level control.
+            Open-domain multimodal document retrieval must navigate a graph of paragraphs, tables, and images where meaning depends on local context and hyperlinks. Existing graph-based retrievers rely on hop-agnostic similarity scores and rigid plans, so they struggle to recover when early hops are misleading or underspecified.
+          </p>
+          <p>
+            <strong>Failure is Feedback (FiF)</strong> reframes traversal as a sequential decision process. An orchestrator maintains a structured memory of successes and failures, escalates from lightweight vector matching to LLM reasoning only when a hop is ambiguous, and performs <em>history-aware backtracking</em> that re-anchors search using failure traces. Experiments on <span class="pill">MultimodalQA</span>, <span class="pill">MMCoQA</span>, and <span class="pill">WebQA</span> show state-of-the-art retrieval while keeping API usage cost-aware.
           </p>
         </div>
       </div>
@@ -399,18 +110,57 @@ Experiments show that VAP consistently outperforms generic policies and token-le
 
 <section class="section">
   <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
+    <h2 class="title is-3 has-text-centered">Highlights</h2>
+    <div class="columns is-multiline">
+      <div class="column is-one-third">
+        <div class="highlight-card">
+          <p class="has-text-weight-semibold">History-aware backtracking</p>
+          <p class="content">
+            Failed hops are logged as actionable traces; FiF re-anchors to promising prior contexts instead of simply undoing steps, preventing repeated dead ends.
+          </p>
+        </div>
+      </div>
+      <div class="column is-one-third">
+        <div class="highlight-card">
+          <p class="has-text-weight-semibold">Cost-aware strategy escalation</p>
+          <p class="content">
+            Traversal begins with cheap vector matching and escalates to LLM reasoning only when ambiguity or past failures justify the extra cost.
+          </p>
+        </div>
+      </div>
+      <div class="column is-one-third">
+        <div class="highlight-card">
+          <p class="has-text-weight-semibold">Structured decision process</p>
+          <p class="content">
+            An orchestrator alternates <em>Traverse</em>, <em>Plan</em>, and <em>Stop</em> actions over a layered component graph, guided by a memory of subqueries and outcomes.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Why Failure is Feedback?</h2>
+    <div class="figure-frame">
+      <img src="./static/images/introduction.png" alt="Motivating failures for graph-based retrieval">
+      <p class="figure-caption has-text-centered">
+        Motivating examples: (a) similarity-only traversal follows a spurious cue; (b) a fixed plan issues an underspecified hop and cannot recover. FiF turns such failures into guidance.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Method Overview</h2>
+    <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">Method: Visual Attentive Prompting</h2>
-        <div class="content has-text-centered">
-          <img src="./static/images/pipeline.png" alt="VAP Pipeline" style="width: 100%; max-width: 900px;"/>
-        </div>
-        <div class="content has-text-justified" style="margin-top: 1rem;">
-          <p>
-            VAP is a <strong>training-free</strong> framework that enables frozen VLA models to understand personalized references.
-            Given a few reference images of a user's object (e.g., "my toy owl"), VAP first grounds the object in the current scene using an open-vocabulary detector and a retriever. 
-            It then generates a <strong>Visual Prompt</strong> by overlaying a semi-transparent red tint on the target object and rewrites the text instruction (e.g., "my toy owl" &rarr; "red toy owl"). 
-            This explicit visual cue guides the VLA's attention, allowing it to manipulate specific instances among visually similar distractors without any fine-tuning.
+        <div class="figure-frame">
+          <img src="./static/images/overview.png" alt="Overview of the FiF orchestrator and actions">
+          <p class="figure-caption">
+            The orchestrator decides when to <strong>Traverse</strong> (choose anchors, subquery, and strategy), when to <strong>Plan</strong> (revise subqueries), and when to <strong>Stop</strong> to rerank accumulated evidence. Memory keeps successes and failures, enabling history-aware re-anchoring and strategy escalation.
           </p>
         </div>
       </div>
@@ -420,28 +170,14 @@ Experiments show that VAP consistently outperforms generic policies and token-le
 
 <section class="section">
   <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
+    <h2 class="title is-3 has-text-centered">Layered Component Graph</h2>
+    <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">Benchmarks Overview</h2>
-        <div class="content has-text-centered">
-          <img src="./static/images/benchmarks.png" alt="Benchmarks Overview" style="width: 100%; max-width: 1000px;"/>
-        </div>
-        <div class="content has-text-justified" style="margin-top: 1rem;">
-          <p>
-            We establish three benchmarks to rigorously evaluate instance-level manipulation capabilities. 
-            In all settings, the robot must identify a user-specific target (defined by ~5 reference images) among visually similar distractors of the same category.
+        <div class="figure-frame">
+          <img src="./static/images/preliminaries.png" alt="Layered component graph and notation">
+          <p class="figure-caption">
+            FiF operates on a layered component graph that mixes navigational and hierarchical edges across documents, components, and subcomponents, supporting multi-hop and multi-granularity retrieval.
           </p>
-          <ul>
-            <li>
-              <strong>Personalized-SIMPLER:</strong> Adapted from the SIMPLER simulation benchmark. We evaluate on both <strong>Google Robot (Fractal)</strong> and <strong>WidowX (Bridge)</strong> settings, replacing task-relevant objects with high-fidelity 3D assets from Sketchfab.
-            </li>
-            <li>
-              <strong>Personalized-VLABench:</strong> Extends VLABench to multi-view selection tasks (Franka Emika Panda). Requires handling occlusion and consistency across 3 camera views.
-            </li>
-            <li>
-              <strong>Real-world Benchmark:</strong> A physical tabletop setup with a SO-101 arm. Includes 8 everyday categories (e.g., vase, slipper, plushie) with unseen instances collected from the real world.
-            </li>
-          </ul>
         </div>
       </div>
     </div>
@@ -450,507 +186,51 @@ Experiments show that VAP consistently outperforms generic policies and token-le
 
 <section class="section">
   <div class="container is-max-desktop">
-    <div class="columns is-centered has-text-centered">
-      <div class="column is-full-width">
-        <h2 class="title is-3">Qualitative Results</h2>
-        <div class="content has-text-justified">
-          <p>
-            We evaluate VAP on three challenging simulation benchmarks. The videos below demonstrate how VAP successfully grounds the target instance and guides the frozen VLA policy to complete the task.
-          </p>
-        </div>
-
-        <h3 class="title is-4" style="margin-top: 2rem;">1. Personalized-SIMPLER (WidowX)</h3>
-        <div class="columns is-multiline">
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Put my camera on towel"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_bridge_camera.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Put my owl figurine on plate"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_bridge_owl.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Pick my shaver"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_bridge_shaver.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Put my straw cup in basket"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_bridge_straw_cup.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-        </div>
-
-        <h3 class="title is-4" style="margin-top: 2rem;">2. Personalized-SIMPLER (Google Robot)</h3>
-        <div class="columns is-multiline">
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_fractal_pen_holder_matching.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Pick my pen holder" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_fractal_pen_holder_variant.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Move coke can near my bottle" (Visual Matching)</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_fractal_bottle_matching.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-half">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Move coke can near my bottle" (Visual Variant)</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/simpler_fractal_bottle_variant.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-        </div>
-
-        <h3 class="title is-4" style="margin-top: 2rem;">3. Personalized-VLABench</h3>
-        <div class="columns is-multiline">
-          <div class="column is-one-third">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Select my leather bag"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/vlabench_leather_bag.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-one-third">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Select my cat figurine"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/vlabench_cat.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-one-third">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Select my cup"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/vlabench_cup.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          
-          <div class="column is-one-third is-offset-one-sixth">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Select my miniature house"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/vlabench_house.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-          <div class="column is-one-third">
-            <div class="content">
-              <p class="has-text-weight-semibold">"Select my shoe"</p>
-              <video autoplay controls muted loop playsinline height="100%" style="width: 100%; border-radius:10px;">
-                <source src="./static/videos/vlabench_shoe.mp4" type="video/mp4">
-              </video>
-            </div>
-          </div>
-        </div>
-
-        <h3 class="title is-4" style="margin-top: 2.5rem;">4. Real-world Examples (SO-101)</h3>
-        <div class="content has-text-justified">
-          <p>
-            Each example shows three synchronized camera views: <strong>front</strong> (cam1), <strong>side</strong> (cam3), and <strong>wrist</strong> (cam2), arranged in that order.
-          </p>
-        </div>
-        <div class="real-world-grid">
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Point at my cup"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_cup/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_cup/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_cup/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Point at my plushie"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_plushie/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_plushie/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_plushie/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Point at my slipper"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_slipper/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_slipper/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_slipper/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Point at my vase"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_vase/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_vase/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/point_at_my_vase/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Put my plant into the plastic bowl"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_plant_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_plant_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_plant_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Put my pouch into the plastic bowl"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_pouch_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Put my scrubber into the plastic bowl"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_scrubber_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_scrubber_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_scrubber_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Put my stuffed toy into the plastic bowl"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_stuffed_toy_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h3 class="title is-4" style="margin-top: 2.5rem;">5. Multi-user Scenario (SO-101)</h3>
-        <div class="real-world-grid">
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Put my cat figurine and my brother's owl figurine into the plastic bowl"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_cat_figurine_into_the_plastic_bowl_and_put_my_brother's_owl_figurine_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="real-world-card">
-            <p class="has-text-weight-semibold">"Put my brother's dog figurine and my ornament into the plastic bowl"</p>
-            <div class="real-world-views">
-              <div class="view-front">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam1.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Front view (cam1)</div>
-              </div>
-              <div class="view-side">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam3.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Side view (cam3)</div>
-              </div>
-              <div class="view-wrist">
-                <video autoplay controls muted loop playsinline>
-                  <source src="./static/videos/put_my_brother's_dog_figurine_into_the_plastic_bowl_and_put_my_ornament_into_the_plastic_bowl/cam2.mp4" type="video/mp4">
-                </video>
-                <div class="view-label">Wrist view (cam2)</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
+    <h2 class="title is-3 has-text-centered">Experiments</h2>
+    <div class="content">
+      <ul>
+        <li><strong>Benchmarks:</strong> MultimodalQA, MMCoQA, and WebQA reconstructed as webpage-style corpora with paragraphs, tables, and images; evaluated with Recall@k and MRR@10, plus downstream QA (EM/F1).</li>
+        <li><strong>Performance:</strong> FiF achieves state-of-the-art retrieval across all three benchmarks. Removing history-aware backtracking drops R@10 from <strong>85.82 → 79.26</strong> on MultimodalQA and <strong>81.91 → 77.45</strong> on WebQA, highlighting the value of failure traces.</li>
+        <li><strong>Efficiency:</strong> Cost-aware escalation keeps average API usage moderate (≈$0.11/query on MultimodalQA with 7–8 LLM calls), balancing accuracy and latency.</li>
+        <li><strong>Coming soon:</strong> Code and dataset links will be added once released.</li>
+      </ul>
     </div>
   </div>
 </section>
-
-<section class="section">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3 has-text-centered">Quantitative Analysis</h2>
-    
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">WidowX (Bridge)</h4>
-        <img src="./static/images/table3.png" alt="Table 3 Results" style="width:100%;">
-        <div class="content has-text-justified" style="margin-top: 0.5rem;">
-          <p>
-            On the WidowX arm using the Bridge dataset, VAP achieves high success rates across all tasks, effectively grounding the user's object even when visually similar distractors are present.
-          </p>
-        </div>
-      </div>
-    </div>
-    
-    <div style="margin-bottom: 2rem;"></div>
-
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Google Robot (Fractal)</h4>
-        <img src="./static/images/table2.png" alt="Table 2 Results" style="width:100%;">
-        <div class="content has-text-justified" style="margin-top: 0.5rem;">
-          <p>
-            VAP significantly outperforms generic policies and text-based prompts. Notably, in the challenging <strong>Visual Variant</strong> track, VAP maintains a strong success rate of 58.2%.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 2rem;"></div>
-
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Personalized-VLABench</h4>
-        <img src="./static/images/table4.png" alt="Table 4 Results" style="width:100%;">
-        <div class="content has-text-justified" style="margin-top: 0.5rem;">
-          <p>
-            VAP achieves the highest Success Rate (SR) across all 5 object categories in multi-view selection tasks.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 2rem;"></div>
-
-    <div class="columns is-centered">
-      <div class="column is-four-fifths has-text-centered">
-        <h4 class="title is-5">Real-world Performance</h4>
-        <img src="./static/images/figure5.png" alt="Real-world Results" style="width:100%;">
-        <div class="content has-text-justified" style="margin-top: 0.5rem;">
-          <p>
-            We validate VAP on a physical tabletop setup. VAP (yellow bars) consistently outperforms baselines (blue/green/red).
-          </p>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
 
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@misc{lee2025bringcuppersonalizingvisionlanguageaction,
-      title={Bring My Cup! Personalizing Vision-Language-Action Models with Visual Attentive Prompting}, 
-      author={Sangoh Lee and Sangwoo Mo and Wook-Shin Han},
-      year={2025},
-      eprint={2512.20014},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO},
-      url={https://arxiv.org/abs/2512.20014}, 
+<pre><code>@inproceedings{yun2026failure,
+  title     = {Failure is Feedback: History-Aware Backtracking for Agentic Traversal in Multimodal Graphs},
+  author    = {Yun, Joohyung and Lee, Doyup and Han, Wook-Shin},
+  booktitle = {International Conference on Machine Learning (ICML)},
+  year      = {2026},
 }</code></pre>
   </div>
 </section>
 
-
 <footer class="footer">
   <div class="container">
     <div class="content has-text-centered">
-      <a class="icon-link"
-         href="https://arxiv.org/pdf/2512.20014">
+      <a class="icon-link" href="./paper.pdf">
         <i class="fas fa-file-pdf"></i>
-      </a>
-      <a class="icon-link" href="https://github.com/Leesangoh/VAP" class="external-link">
-        <i class="fab fa-github"></i>
       </a>
     </div>
     <div class="columns is-centered">
       <div class="column is-8">
         <div class="content">
           <p>
-            This website is licensed under a <a rel="license"
-                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
-            Commons Attribution-ShareAlike 4.0 International License</a>.
+            This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
           </p>
           <p>
-            Website template borrowed from <a
-              href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+            Website template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
           </p>
         </div>
       </div>
     </div>
   </div>
 </footer>
-
-<script>
-  function slideVideos(direction) {
-    const slider = document.getElementById('videoSlider');
-    const scrollAmount = 320; // 카드 너비 + 갭 대략적인 값
-    
-    if (direction === 1) {
-      slider.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    } else {
-      slider.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    }
-  }
-</script>
 
 </body>
 </html>

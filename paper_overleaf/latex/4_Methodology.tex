@@ -1,0 +1,1895 @@
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=1.00\linewidth]{figures/overview.pdf}
+  \caption{
+    Overview of \textsc{\OurFullName}.
+    (a) High-level orchestration loop and action interactions, labeled using the notation from the problem formulation (\textsection~\ref{sec:probform}).
+    (b) An example layered component graph $\mathcal{G}$. 
+    Note that only the document and component nodes are shown for brevity.
+    (c) An example memory $M_t$ of a traversal over $\mathcal{G}$.
+    }
+  % {
+  %       Overview of \textsc{\OurFullName}.
+  %       (a) The outline of \textsc{\Ours}'s orchestration and tool usage.
+  %       Problem formulation (\textsection~\ref{sec:probform})의 notation에 맞게 레이블링되어 있다.
+  %       (b) An example layered component graph $\mathcal{G}$.
+  %       (c) Example memory $M_t$ showing the history of traversal over $\mathcal{G}$.
+  %   }
+    \vspace{-4mm}
+  \label{fig:overview}
+\end{figure*}
+
+
+\vspace{-1mm}
+\section{\textsc{\OurFullName}}
+\label{sec:method}
+\vspace{-1mm}
+
+{\color{red}
+
+% 한 paragraph로 축소
+
+% We propose \textsc{\OurFullName} (\textsc{\Ours}) for an LLM-enabled agentic retriever to navigate the layered component graph $\mathcal{G}$ and incrementally build an evidence subgraph (Figure~\ref{fig:overview}).
+% Crucially, \textsc{\Ours} reframes open-domain multimodal retrieval as a \textit{sequential decision process} controlled by an Orchestrator, rather than executing a rigid, pre-defined traversal recipe.
+
+% At iteration $t$, the Orchestrator conditions on the traversal memory to select an action from the action set.
+% When selecting \textsc{Traverse}, it jointly decides a target subquery, an anchor document set to start traversal from, and a traversal configuration that trades off accuracy and cost.
+% The Multi-strategy Traverser then executes the hop and returns newly retrieved evidence.
+% When selecting \textsc{Plan}, it uses the memory to generate a new subquery list.
+% Finally, \textsc{Stop} terminates the process and calls the \textsc{Reranker} to score all components accumulated in memory.
+
+% This design operationalizes our core principle that \emph{failure is feedback}.
+% First, \textsc{\Ours} performs \emph{cost-aware strategy escalation}: it starts from lightweight traversal and escalates to more expensive reasoning only when a hop is ambiguous or fails.
+% Second, it enables \emph{history-aware backtracking} via re-anchoring: instead of simply reverting the state, the Orchestrator leverages failure traces to resume from a more promising prior context and to avoid repeating previously failed routing patterns.
+
+% Figure~\ref{fig:overview} (bottom) illustrates an example trajectory.
+% The agent first calls the Planner ($h_1$) to generate initial subqueries $\{p_1, p_2, p_3\}$, then successfully retrieves evidence at $h_2$ (e.g., $D_1$ and components $C_{1,2}, C_{1,3}$).
+% Two subsequent traversal attempts ($h_3$ and $h_4$) fail and are logged as failure traces.
+% Conditioned on this history, the Orchestrator replans at $h_5$ by appending a refined subquery $p_4$, and then succeeds at $h_6$ by switching strategy (e.g., executing a global hop that reaches $D_4$/$D_5$), after which \textsc{Stop} reranks the accumulated components to output $\mathcal{R}$.
+
+}
+
+We propose \textsc{\OurFullName} (\textsc{\Ours}), an LLM-driven agentic retriever that traverses the layered component graph $\mathcal{G}$. 
+Instead of executing a static, pre-defined traversal plan, \textsc{\Ours} formulates retrieval as a \emph{sequential decision process}: 
+an Orchestrator iteratively chooses to 
+(i) \textsc{Traverse} from selected anchors under a strategy that explicitly trades off accuracy and cost, 
+(ii) \textsc{Plan} by revising or expanding subqueries as the information need evolves, or 
+(iii) \textsc{Stop} and invoke a final \textsc{Reranker} over all accumulated candidates.
+A structured traversal memory records retrieved evidence together with explicit success/failure outcomes, operationalizing our core principle that \emph{failure is feedback}: 
+the Orchestrator escalates to stronger (but costlier) reasoning for traversal when lightweight hops are ambiguous or fail, and performs history-aware backtracking by re-anchoring to more promising prior contexts while avoiding previously failed routing patterns.
+We start by formalizing the sequential decision process, then explain the details for each agent that comprise the process.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Retrieval as a Sequential Decision Process}
+\label{sec:probform}
+\vspace{-1mm}
+
+
+We formulate open-domain multimodal retrieval as a \textit{sequential decision process} over the layered component graph $\mathcal{G}$.
+Given a query $Q$, the agent iteratively traverses $\mathcal{G}$ to output an ordered list of relevant components.
+We formalize the process as $\langle \mathcal{S}, \mathcal{A}, \mathcal{T}\rangle$, where the state is the agent's information state $s_t$; 
+executing $a_t$ yields observation $o_t$, which is integrated into $s_{t+1}$ by the transition.
+
+
+
+
+\noindent\textbf{State ($\mathcal{S}$).}
+We represent the information state as a structured \textit{memory} $s_t = M_t$.
+$M_t$ is basically a trajectory log capturing decisions and outcomes: $M_t = (Q, \mathcal{Q}_t, H_t)$.
+% Because $M_t$ stores all retrieved evidence along the trajectory, it implicitly defines the discovered evidence subgraph.
+\vspace{-2mm}
+\squishlist
+    \item \textit{Original Query ($Q$):} The user's initial input.
+
+    \item \textit{Subquery List ($\mathcal{Q}_t$):} a list of decomposed query serving as a retrieval plan.
+    % a dynamic list $\big[(p_i, z_i, \alpha_i)\big]_{i=1}^{m_t}$ that decomposes $Q$ ($m_t=|\mathcal{Q}_t|$).
+    % Each subquery $p_i$ has status $z_i \in \{\texttt{Unsolved}, \texttt{Solved}, \texttt{Deprecated}\}$ and an optional answer $\alpha_i$.
+    % \texttt{Deprecated} denotes a superseded subquery retained for auditability.
+
+    \item \textit{Action History ($H_t$):}
+    an ordered sequence $[h_1,$ $\ldots,$ $h_t]$.
+    Each record $h_k$ serves as a log of each action.
+    % (i) a traversal record $(q_k,$ $\tau_k,$ $\mathcal{B}_k,$ $e_k)$ or (ii) a newly generated subqueries list $\mathcal{Q}_{\text{new}}$.
+    % Note that $e_k$ is either \texttt{Success} or \texttt{Failure}, and $\mathcal{B}_k=(\mathcal{D}^{(k)},\mathcal{C}^{(k)})$ denotes the retrieved documents and components at step $k$.
+\squishend
+\vspace{-2mm}
+
+% We also define the \textit{frontier} $\mathcal{F}_t$ as the most recent retrieved evidence:
+% $\mathcal{F}_t$ $= \mathcal{D}^{(t^\star)} \cup \mathcal{C}^{(t^\star)},$ $t^\star$ $= \max\{k \le t \mid a_k = \textsc{Traverse}(\cdot)\}$
+% which may be used for subsequent local expansions.
+
+
+
+
+\noindent\textbf{Action ($\mathcal{A}$).}
+An action $a_t \in \mathcal{A}$ is a structured tool call selected by the orchestrator given $s_t$:
+% $a_t \in \left\{\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t), \textsc{Plan}(M_t), \textsc{Stop} \right\}$
+\vspace{-2mm}
+\squishlist
+
+    \item $\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$ executes one retrieval hop for subquery $q_t$ with strategy $\tau_t$ from an anchor document set $\mathcal{D}_{anc}$.
+    % Typically $\mathcal{D}_{anc}$ is derived from $\mathcal{F}_t$, which corresponds to a local expansion; 
+    % choosing $\mathcal{D}_{anc}$ from an earlier traversal in $H_t$ implements history-aware re-anchoring (\textit{backtracking}).
+    
+    \item $\textsc{Plan}(M_t)$ generates updated subqueries needed to solve $Q$, consulting both $\mathcal{Q}_t$ and $H_t$.
+
+    \item $\textsc{Stop}$ terminates the overall process.
+    It applies a final \textsc{Rerank} module to all components stored in memory $M_t$ and returns a ranked list $\mathcal{C}_R$ based on their relevance to the original query $Q$.
+
+\squishend
+\vspace{-2mm}
+
+\noindent\textbf{Observation ($o_t$).}
+$o_t$ contains the \emph{new} outputs produced by the action at step $t$.
+% Unlike the accumulated state, $o_t$ contains only the new information generated at the current step.
+% \vspace{-2mm}
+% \begin{equation*}
+%     o_t =
+%     \begin{cases}
+%         (\mathcal{D}^{(t)}, \mathcal{C}^{(t)}, e_t, \Delta\mathcal{Q}^{(t)}), & a_t = \textsc{Traverse}(\cdot), \\
+%         \mathcal{Q}_{\text{new}}, & a_t = \textsc{Plan}.
+%     \end{cases}
+%     \vspace{-2mm}
+% \end{equation*}
+For \textsc{Traverse}, the observation is the traversed documents/components and if the traversal was successful or not.
+For \textsc{Plan}, the observation is the updated list of subqueries.
+% $(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$ are newly retrieved documents/components and $e_t$ is the traversal evaluation.
+% $\Delta\mathcal{Q}^{(t)}=\big[(p_i, z_i, \alpha_i)\big]_{i=1}^{m^{(t)}}$ is a list of subquery updates supported by the newly retrieved evidence, where each tuple provides a subquery $p_i$, its updated status $z_i$, and an extracted answer $\alpha_i$.
+
+
+
+
+\noindent\textbf{Transition ($\mathcal{T}$).}
+The transition process updates the state $s_t$ using the observation $o_t$ to generate the next state $s_{t+1}$.
+Specifically, it appends the observation to the action history $H_t$.
+It appends the newly generated subqueries to $\mathcal{Q}_t$.
+% It updates the information state by integrating per-step outputs:
+% $s_{t+1} \leftarrow \textsc{Update}(s_t, a_t, o_t)$ and the induced kernel $p(s_{t+1}\!\mid s_t,a_t)$ reflects action outcomes summarized by $o_t$ together with the deterministic update operator.
+% \squishlist
+
+%     \item If $a_t=\textsc{Traverse}(\cdot)$, set $\mathcal{B}_t=(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$ and append a traversal record $h_t=(q_t,\tau_t,\mathcal{B}_t,e_t)$ to $H_t$.
+%     We then update the subquery list $\mathcal{Q}_t$ using $\Delta\mathcal{Q}^{(t)}$:
+%     for each $(p_i, z_i, \alpha_i)\in \Delta\mathcal{Q}^{(t)}$, if $p_i$ matches an existing subquery in $\mathcal{Q}_t$, we overwrite its status with $z_i$ and set its answer to $\alpha_i$ when provided. % otherwise, we append $(p_i, z_i, \alpha_i)$ as a new entry.
+    
+%     \item If $a_t=\textsc{Plan}$, append $\mathcal{Q}_{\text{new}}$ to $\mathcal{Q}_t$ to form $\mathcal{Q}_{t+1}$; 
+%     previously \texttt{Unsolved} subqueries that are refined/replaced are retained but marked \texttt{Deprecated}.
+    
+%     \item If $a_t=\textsc{Stop}$, the episode terminates.
+    
+% \squishend
+% This explicit update persists both failures and reasoning steps, enabling history-aware decision-making in future iterations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Action Design}
+\vspace{-1mm}
+
+% In this subsection, we detail the LLM-powered agents that implement each action in our sequential decision process.
+
+In this subsection, we detail the LLM-powered agents that implement each action in our sequential decision process defined in \textsection~\ref{sec:probform}.
+Crucially, \textsc{\Ours}'s actions are designed to make two principles \emph{operational}:
+(i) \emph{economically-rational control} via a portfolio of traversal strategies that can be escalated on demand, and
+(ii) \emph{failure-as-feedback} via explicit success/failure signals and history-aware re-anchoring for robust multihop navigation in noisy document graphs.
+
+\noindent\textbf{(1) Multi-strategy Traverser.}
+It executes the $\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$ action on the layered graph $\mathcal{G}$, aiming to find subquery $q_t$-relevant components and documents, anchoring from the documents $\mathcal{D}_{anc}$.
+It consists of two stages: 
+(i) a \emph{document-level traverser} that selects a small set of candidate documents using document-node summaries (Layer $V_0$), and
+(ii) a \emph{component-level traverser} that identifies $q_t$-relevant components among the candidates by searching their children nodes.
+
+Crucially, the Traverser is a \emph{configurable strategy engine}: the strategy tuple $\tau_t$ specifies retrieval behaviors that trade off accuracy and efficiency.
+\textbf{Strategy tuple.}
+$\tau_t$ controls traversal along three dimensions:
+\squishlist
+
+    \item \textit{Hop Scope (Global vs.\ Local).}
+    \emph{Local Hop} restricts candidate documents to the direct neighbors of the anchor document set $\mathcal{D}_{anc}$ via the children's navigation edges;
+    \emph{Global Hop} considers the full document corpus to escape local neighborhoods when evidence is dispersed.
+    It performs a dense retrieval over layer $V_0$'s document summaries to search the most query-relevant document set.
+    
+    \item \textit{Vector Scoring Granularity.}
+    It configures the layer at which vector similarity is computed.
+    Intuitively, coarse-grained subqueries are often best matched at the document/component level, while fine-grained subqueries benefit from scoring at the subcomponent level.
+    The document-level traverser uses the granularities of $g\in\{0,1,2\}$ and the component-level uses $g\in\{1,2\}$.
+    Let $\mathrm{Desc}_g(v)$ be descendants of $v$ at Layer $V_g$ (including $v$ if already in $V_g$). 
+    We score a node $v$ by
+    \begin{equation*}
+        \textsc{Score}_{\mathrm{vec}}(q_t, v; g)
+        \;=\;
+        \max_{u \in \mathrm{Desc}_g(v)} sim(q_t, x(u))
+    \end{equation*}
+    
+    \item \textit{LLM-Reasoning.}
+    This option specifies whether to use LLM-based reasoning to accurately rerank components with $q_t$ beyond vector scores, supporting modes of $\{\texttt{None},\ \texttt{Component-only},\ \texttt{Both}\}$.
+    To control LLM inference cost, we pre-filter top-$k$ candidates by $\textsc{Score}_{\mathrm{vec}}$ and then pass their contents to the LLM for reranking.
+    
+\squishend
+The traversal outputs a document set $\mathcal{D}_t$ and a component set $\mathcal{C}_t$, which are recorded in the action history $H_t$.
+% Traversal의 결과는 document set $\mathcal{D}_t$와 component set $\mathcal{C}_t$로, 이들은 action history $H_t$ 저장된다.
+% This configurability enables \emph{cost-aware strategy escalation}: the Orchestrator can begin with a lightweight setting and selectively upgrade $\tau_t$ only when a hop is ambiguous or when previous attempts fail.
+% This is the key mechanism that enables our \emph{cost-aware strategy escalation}: the Orchestrator can start from a cheap configuration and selectively ``upgrade'' $\tau_t$ only when a hop is ambiguous or when a prior attempt fails.
+
+
+\vspace{-1mm}
+\noindent\textbf{(2) Subquery Planner.}
+% The Planner implements $\textsc{Plan}(M_t)$ and generates a new set of subqueries to resolve remaining information needs toward answering $Q$, conditioning on subquery statuses in $\mathcal{Q}_t$ and the retrieved components stored within $H_t$.
+% 이전에 만들어진 subquery list가 잘못 생성되었다면, 해당 action을 call함으로써 새로이 얻은 데이터를 바탕으로 plan을 update할 수 있다는 점이 포인트이다.
+% 이렇게 업데이트된 새로이 만들어진 subquery들은 memory $M_t$ 중 subquery list $\mathcal{Q}$에 append된다, 기존의 subquery list는 무엇이 잘못됐었는지를 기록하는 용도로 지우지 않는다.
+The Planner implements $\textsc{Plan}(M_t)$ and generates new subqueries to address the remaining information needs for answering $Q$, conditioning on the current subquery statuses $\mathcal{Q}_t$ and the retrieved evidence stored in $H_t$.
+Invoking \textsc{Plan} allows the agent to revise its plan using the newly acquired evidence in the cases where initial subquery list is suboptimal.
+Newly generated subqueries are appended to the subquery list $\mathcal{Q}$ in memory $M_t$; importantly, we keep earlier subqueries rather than overwriting them, so the system retains a trace of what was tried and where the plan went off track.
+
+
+\vspace{-1mm}
+\noindent\textbf{(3) Traversal Evaluator.}
+The Evaluator produces part of the observation $o_t$ of \textsc{Traverse} by assessing whether the traversal outcome $\mathcal{C}_t$ is useful for the target subquery $q_t$.
+It provides two outputs.
+First, it judges whether the retrieved components can answer $q_t$; this success/failure signal is stored in the action history $H_t$ together with the traversal results.
+Second, it checks whether the retrieved content can resolve any remaining items in the subquery list $\mathcal{Q}_t$, and if so, extracts tentative answers and updates $\mathcal{Q}_t$ accordingly.
+These logged outcomes later guide backtracking decisions, helping the Orchestrator distinguish promising contexts from unproductive ones.
+% The Evaluator produces the traversal evaluation $e_t \in \{\texttt{Success},\texttt{Failure}\}$ given the attempted subquery and newly retrieved evidence $(q_t, \mathcal{B}_t)$, where $\mathcal{B}_t=(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$.
+% Traversal의 observation $o_t$를 생성하는 agent로, traversal의 목표인 $q_t$와 결과값인 $C_t$를 바탕으로 traversal인 성공적이었는지를 판단하는 역할을 한다.
+% 이를 두 가지의 output으로 표현한는데,
+% 첫째는 traversal을 진행한 component들의 내용이 traversal의 목표였던 $q_t$를 answer할 수 있는지 없는지이다.
+% 이는 memory 상 action history $H_t$에 traversal 결과와 함께 저장된다.
+% 둘째는 traversal을 진행한 component들의 내용이 subquery list $\mathcal{Q}_t$의 남은 질문들을 해결할 수 있는지, 있다면 답은 무엇인지이다.
+% 만약 해결 가능한 subquery가 있다면, 그 답을 $\mathcal{Q}_t$에 업데이트한다.
+% 이렇게 기록한 성공 여부가 향후 backtracking을 할 때 promising한 set인지 아닌지를 판단하는 정보로 사용된다.
+ % failure, the outcome is logged into $H_t$ and directly conditions subsequent decisions (e.g., escalation, re-anchoring, or replanning).
+% In addition, the Evaluator outputs \emph{subquery updates} $\Delta\mathcal{Q}^{(t)}=\big[(p_i, z_i, \alpha_i)\big]_{i=1}^{m^{(t)}}$, which operationalizes the observation definition in \textsection~\ref{sec:probform}.
+
+
+
+\vspace{-1mm}
+\noindent\textbf{(4) Reranker.}
+The Reranker is invoked by $\textsc{Stop}$ to produce the final ranked list of components $\mathcal{R}$ from the accumulated memory $M_t$.
+Concretely, it aggregates all candidate components stored in memory and assigns each a final relevance score with respect to the \emph{original} query $Q$, then returns $\mathcal{C}_R$ by selecting the top-$k$ components.
+% The Reranker is invoked by $\textsc{Stop}$ to produce the final ranked list of components $\mathcal{R}$ from the accumulated memory $M_t$.
+% Concretely, it aggregates all candidate components stored within the memory and assigns each component a final relevance score with respect to the \emph{original} query $Q$.
+% 가장 score가 높은 $k$개를 골라 $\mathcal{C}_R$를 반환한다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Orchestrator}
+\label{sec:tools}
+\vspace{-1mm}
+
+The Orchestrator is the central LLM-driven controller that implements the policy over actions, selecting $a_t$ given the current information state $M_t$.
+At each iteration, it chooses among $\textsc{Traverse}$, $\textsc{Plan}$, and $\textsc{Stop}$ to maximize retrieval accuracy while remaining efficient, treating \emph{failure as feedback}.
+
+Beyond selecting actions, the \textsc{\Ours} Orchestrator actively \emph{manages plan errors}.
+Rather than using $q_t$ as a direct copy from the subquery list, it treats the list as a scaffold and synthesizes a task-specific target by rewriting, refining, or composing subqueries based on the current evidence and unresolved constraints.
+In particular, it can use newly retrieved components to resolve missing information from earlier subqueries, or fuse multiple planned subqueries into a single sharper retrieval objective when they are interdependent.
+When the subquery list becomes clearly unreliable (e.g., overly underspecified, drifting, or repeatedly unproductive), the Orchestrator can invoke $\textsc{Plan}$ at any time to regenerate a better set of subqueries conditioned on $M_t$, while preserving prior subqueries as a trace of what was attempted.
+
+The Orchestrator also enables \emph{history-aware backtracking via re-anchoring}.
+Instead of always hopping from the most recent set of documents, it chooses an anchor document set $\mathcal{D}_{anc}$ that best matches the newly formed $q_t$, potentially restarting from an earlier successful context.
+To do so, it consults the action history $H_t$, leveraging (i) summaries of previously retrieved documents and (ii) the Traversal Evaluator's success/failure outcomes to identify the most promising region to resume from and to avoid repeating failed routing patterns.
+This re-anchoring makes multihop navigation more resilient to dead ends and spurious cues.
+In addition, the Orchestrator explicitly reasons about efficiency through the strategy tuple: 
+for each new $q_t$, it predicts an economical traversal configuration $\tau_t$ to try first.
+If such a hop fails, it can retry from the same anchor (or a better re-anchored set) with an escalated, more accurate $\tau_t$ (e.g., finer granularity, leveraging LLM reranking, or using global scope).
+This closed-loop control reduces failures caused by insufficient reasoning while keeping computation focused where it is most needed.
+
+
+% The Orchestrator is the central LLM-driven controller that implements the policy over actions, selecting the action $a_t$ given the current information state $M_t$.
+% At each iteration, it chooses among $\textsc{Traverse}$, $\textsc{Plan}$, and $\textsc{Stop}$ to maximize retrieval accuracy while keeping an efficient manner, treating \emph{failure as feedback}.
+
+% Two contributions from the Introduction are realized directly by the Orchestrator's control logic.
+% First, \emph{dynamic cost-aware strategy escalation}:
+% for a given target subquery $q_t$, the Orchestrator begins with a conservative (cheap) traversal configuration $\tau_t$ (e.g., local scope, coarse granularity, no LLM reranking) and escalates to stronger but more expensive settings (e.g., finer granularity, LLM reranking, or global hops) only when the Evaluator flags ambiguity or $\texttt{Failure}$.
+% Second, \emph{history-aware backtracking via re-anchoring}:
+% instead of reverting state, the Orchestrator leverages failure traces recorded in $H_t$ to select an alternative anchor document set $\mathcal{D}_{anc}$ from \emph{earlier} successful/near-successful contexts, revise the next subquery, and avoid repeating previously failed routing patterns.
+
+% When selecting $\textsc{Traverse}$, the Orchestrator jointly determines:
+% (i) the target subquery $q_t$ (possibly revised using failure traces),
+% (ii) the traversal strategy $\tau_t$ (possibly escalated),
+% and (iii) the anchor document set $\mathcal{D}_{anc}$.
+% It invokes $\textsc{Plan}(M_t)$ when a new subquery set is needed (e.g., initialization, missing constraints, or consecutive failures), and triggers $\textsc{Stop}$ when the subquery list $\mathcal{Q}_t$ and accumulated evidence indicate that further exploration is unlikely to improve the final ranking under the remaining budget.
+
+
+
+
+
+
+
+
+
+
+\begin{table*}[htbp]
+    \caption{Retrieval accuracy (Recall and MRR) of \textsc{\Ours} and its competitors on three benchmarks. R@k, M@k indicates recall at $k$ and MRR at $k$, respectively. The best score in each column is in \textbf{bold}. }
+    \vspace{-3.5mm}
+    \label{tab:retrieval_performance}
+    \begin{center}
+    \begin{small}
+    \scalebox{1.00}{
+    \renewcommand{\arraystretch}{0.95}
+    \resizebox{1.0\textwidth}{!}{
+    \begin{tabular}{l|rrrrr|rrrrr|rrrrr}
+        \toprule
+        \multirow{2}{*}{Algorithm} & 
+        \multicolumn{5}{c|}{\MultimodalQA} & 
+        \multicolumn{5}{c|}{\MMCoQA} & 
+        \multicolumn{5}{c}{\WebQA} \\
+        \cmidrule(lr){2-6} \cmidrule(lr){7-11} \cmidrule(lr){12-16}
+        & R@1 & R@2 & R@5 & R@10 & M@10 
+        & R@1 & R@2 & R@5 & R@10 & M@10 
+        & R@1 & R@2 & R@5 & R@10 & M@10 \\
+        \midrule
+        
+        \textsc{NV-Embed-v2} & 
+            26.42 & 37.63 & 52.08 & 61.45 & 68.13 & 
+            18.22 & 28.46 & 40.22 & 48.19 & 41.97 & 
+            22.18 & 31.38 & 39.80 & 51.19 & 55.81 \\
+            
+        \textsc{VisRAG}  & 
+            34.19 & 42.12 & 53.38 & 56.91 & 57.88 &
+            19.57 & 27.53 & 33.59 & 37.31 & 30.01 &
+            25.58 & 41.46 & 46.10 & 48.75 & 50.60 \\
+            
+        \textsc{ColPali}     & 
+            38.38 & 52.61 & 61.73 & 63.95 & 67.65 &
+            31.11 & 41.97 & 46.89 & 51.27 & 43.13 &
+            35.21 & 46.90 & 53.37 & 57.78 & 56.90 \\
+            
+        \textsc{LILaC}       & 
+            33.59 & 50.59 & 65.13 & 72.23 & 79.12 & 
+            25.25 & 38.13 & 51.02 & 60.86 & 53.36 & 
+            32.67 & 45.35 & 57.77 & 64.23 & 77.87 \\
+            
+        \textsc{IRCoT}       & 
+            39.56 & 55.09 & 69.87 & 74.97 & 82.24 & 
+            43.03 & 53.69 & 62.70 & 64.62 & 62.84 &
+            40.85 & 56.73 & 68.78 & 73.72 & 83.15 \\
+            
+        \textsc{\Ours}         & 
+            \textbf{42.17} & \textbf{57.58} & \textbf{74.88} & \textbf{85.82} & \textbf{86.82} & 
+            \textbf{46.31} & \textbf{58.40} & \textbf{69.47} & \textbf{75.17} & \textbf{74.88} & 
+            \textbf{43.91} & \textbf{61.78} & \textbf{74.83} & \textbf{80.79} & \textbf{87.77} \\
+        
+        \bottomrule
+    \end{tabular}
+    }
+    \renewcommand{\arraystretch}{1.0}
+    }
+    \end{small}
+    \end{center}
+    \vspace{-6mm}
+\end{table*}
+
+
+\begin{table}[!t]
+    \caption{End-to-end QA accuracy (EM and F1) of \textsc{\Ours} and its competitors for the three bnechmarks. The best score in each column is in \textbf{bold}.}
+    \vspace{-3.5mm}
+    \label{tab:qa_em_f1}
+    \begin{center}
+    \begin{small}
+    \scalebox{0.9}{
+    \renewcommand{\arraystretch}{0.95}
+    \resizebox{1.1\linewidth}{!}{
+    \begin{tabular}{lcccccc}
+        \toprule
+        
+        \multirow{2}{*}{Algorithm} &
+        \multicolumn{2}{c}{\tiny \MultimodalQA} &
+        \multicolumn{2}{c}{\small \MMCoQA} &
+        \multicolumn{2}{c}{\small \WebQA} \\
+        \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+        & EM & F1 & EM & F1 & EM & F1 \\
+        \midrule
+        
+        \textsc{NVEmbed-v2}                 & 53.80 & 61.15 & 39.20 & 47.73 & 51.82 & 59.88 \\
+        \textsc{VisRAG}                 & 51.40 & 61.72 & 35.20 & 42.66 & 46.53 & 55.19 \\
+        \textsc{ColPali}                    & 52.82 & 63.14 & 40.73 & 47.46 & 49.87 & 57.78 \\
+        \textsc{LILaC}                      & 57.78 & 63.98 & 42.57 & 51.14 & 53.38 & 60.71 \\
+        \textsc{IRCoT}                      & 60.32 & 68.09 & 47.21 & 57.71 & 57.03 & 65.88 \\
+        \textsc{\Ours}                      & \textbf{65.15} & \textbf{70.47} & \textbf{51.11} & \textbf{ 62.42} & \textbf{62.63} & \textbf{72.47} \\
+        \bottomrule
+        
+    \end{tabular}
+    }
+    \renewcommand{\arraystretch}{1.0}
+    }
+    \end{small}
+    \end{center}
+    \vspace{-6mm}
+\end{table}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%% Version 5
+
+
+
+% We formulate open-domain multimodal retrieval as a \textit{sequential decision process} over the layered component graph $\mathcal{G}$.
+% Given a query $Q$, the agent iteratively traverses $\mathcal{G}$ to accumulate an \emph{evidence subgraph} and output an ordered list of relevant components (single-shot LLM calls or naive vector search are infeasible at this scale).
+% We formalize the process as $\langle \mathcal{S}, \mathcal{A}, \mathcal{T}\rangle$, where the Markov state is the agent's information state $s_t$; executing $a_t$ yields observation $o_t$, which is integrated into $s_{t+1}$ by the transition.
+
+
+
+
+% \noindent\textbf{State ($\mathcal{S}$).}
+% We represent the information state as a structured \textit{memory} $s_t = M_t$.
+% $M_t$ is basically a trajectory log capturing decisions and outcomes: $M_t = (Q, \mathcal{Q}_t, H_t)$.
+% % Because $M_t$ stores all retrieved evidence along the trajectory, it implicitly defines the discovered evidence subgraph.
+% \vspace{-2mm}
+% \squishlist
+%     \item \textit{Original Query ($Q$):} The user's initial input.
+
+%     \item \textit{Subquery List ($\mathcal{Q}_t$):} a list 
+%     % a dynamic list $\big[(p_i, z_i, \alpha_i)\big]_{i=1}^{m_t}$ that decomposes $Q$ ($m_t=|\mathcal{Q}_t|$).
+%     % Each subquery $p_i$ has status $z_i \in \{\texttt{Unsolved}, \texttt{Solved}, \texttt{Deprecated}\}$ and an optional answer $\alpha_i$.
+%     % \texttt{Deprecated} denotes a superseded subquery retained for auditability.
+
+%     \item \textit{Action History ($H_t$):}
+%     an ordered sequence $[h_1,$ $\ldots,$ $h_t]$.
+%     Each record $h_k$ is either (i) a traversal record $(q_k,$ $\tau_k,$ $\mathcal{B}_k,$ $e_k)$ or (ii) a newly generated subqueries list $\mathcal{Q}_{\text{new}}$.
+%     Note that $e_k$ is either \texttt{Success} or \texttt{Failure}, and $\mathcal{B}_k=(\mathcal{D}^{(k)},\mathcal{C}^{(k)})$ denotes the retrieved documents and components at step $k$.
+% \squishend
+% \vspace{-2mm}
+
+% We also define the \textit{frontier} $\mathcal{F}_t$ as the most recent retrieved evidence:
+% $\mathcal{F}_t$ $= \mathcal{D}^{(t^\star)} \cup \mathcal{C}^{(t^\star)},$ $t^\star$ $= \max\{k \le t \mid a_k = \textsc{Traverse}(\cdot)\}$
+
+% which may be used for subsequent local expansions.
+
+
+
+
+% \noindent\textbf{Action ($\mathcal{A}$).}
+% An action $a_t \in \mathcal{A}$ is a structured tool call selected by the orchestrator (policy) given $s_t$:
+% $a_t \in \left\{\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t), \textsc{Plan}(M_t), \textsc{Stop} \right\}$
+
+% \vspace{-2mm}
+% \squishlist
+
+%     \item $\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$ executes one retrieval hop for subquery $q_t$ with strategy $\tau_t$ from an anchor document set $\mathcal{D}_{anc}\subseteq\mathcal{D}$.
+%     Typically $\mathcal{D}_{anc}$ is derived from $\mathcal{F}_t$, which corresponds to a local expansion; 
+%     choosing $\mathcal{D}_{anc}$ from an earlier traversal in $H_t$ implements history-aware re-anchoring (\textit{backtracking}).
+    
+%     \item $\textsc{Plan}(M_t)$ generates updated subqueries $\mathcal{Q}_{\text{new}}$ needed to solve $Q$, consulting both $\mathcal{Q}_t$ and $H_t$.
+
+%     \item $\textsc{Stop}$ terminates the overall process.
+%     It applies a final \textsc{Rerank} module to all components stored in memory $M_t$ and returns a ranked list $R$ based on their relevance to the original query $Q$.
+
+
+% \squishend
+% \vspace{-2mm}
+
+% \noindent\textbf{Observation ($o_t$).}
+% $o_t$ contains only the \emph{new} outputs produced at step $t$ (action results).
+% Unlike the accumulated state, $o_t$ contains only the new information generated at the current step.
+% \vspace{-2mm}
+% \begin{equation*}
+%     o_t =
+%     \begin{cases}
+%         (\mathcal{D}^{(t)}, \mathcal{C}^{(t)}, e_t, \Delta\mathcal{Q}^{(t)}), & a_t = \textsc{Traverse}(\cdot), \\
+%         \mathcal{Q}_{\text{new}}, & a_t = \textsc{Plan}.
+%     \end{cases}
+%     \vspace{-2mm}
+% \end{equation*}
+% $(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$ are newly retrieved documents/components and $e_t$ is the traversal evaluation.
+% $\Delta\mathcal{Q}^{(t)}=\big[(p_i, z_i, \alpha_i)\big]_{i=1}^{m^{(t)}}$ is a list of subquery updates supported by the newly retrieved evidence, where each tuple provides a subquery $p_i$, its updated status $z_i$, and an extracted answer $\alpha_i$.
+
+
+
+
+% \noindent\textbf{Transition ($\mathcal{T}$).}
+% It updates the information state by integrating per-step outputs:
+% $s_{t+1} \leftarrow \textsc{Update}(s_t, a_t, o_t)$ and the induced kernel $p(s_{t+1}\!\mid s_t,a_t)$ reflects action outcomes summarized by $o_t$ together with the deterministic update operator.
+% \squishlist
+
+%     \item If $a_t=\textsc{Traverse}(\cdot)$, set $\mathcal{B}_t=(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$ and append a traversal record $h_t=(q_t,\tau_t,\mathcal{B}_t,e_t)$ to $H_t$.
+%     We then update the subquery list $\mathcal{Q}_t$ using $\Delta\mathcal{Q}^{(t)}$:
+%     for each $(p_i, z_i, \alpha_i)\in \Delta\mathcal{Q}^{(t)}$, if $p_i$ matches an existing subquery in $\mathcal{Q}_t$, we overwrite its status with $z_i$ and set its answer to $\alpha_i$ when provided. % otherwise, we append $(p_i, z_i, \alpha_i)$ as a new entry.
+    
+%     \item If $a_t=\textsc{Plan}$, append $\mathcal{Q}_{\text{new}}$ to $\mathcal{Q}_t$ to form $\mathcal{Q}_{t+1}$; 
+%     previously \texttt{Unsolved} subqueries that are refined/replaced are retained but marked \texttt{Deprecated}.
+    
+%     \item If $a_t=\textsc{Stop}$, the episode terminates.
+    
+% \squishend
+% This explicit update persists both failures and reasoning steps, enabling history-aware decision-making in future iterations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% \subsection{Agentic Framework}
+% \label{sec:tools}
+
+% This section describes the actions that instantiate the action space and per-step outputs defined in \textsection~\ref{sec:probform}.
+% Crucially, \textsc{\Ours}'s actions are designed to make two principles \emph{operational}:
+% (i) \emph{economically-rational control} via a portfolio of traversal strategies that can be escalated on demand, and
+% (ii) \emph{failure-as-feedback} via explicit success/failure signals and history-aware re-anchoring for robust multihop navigation in noisy document graphs.
+
+
+
+
+
+% \noindent\textbf{(1) Orchestrator.}
+% The Orchestrator is the central LLM-driven controller that implements the policy over actions, selecting the next step given the current information state $M_t$.
+% At each iteration, it chooses among $\textsc{Traverse}$, $\textsc{Plan}$, and $\textsc{Stop}$ to maximize retrieval in an efficient manner, explicitly treating \emph{failure as feedback}.
+
+
+
+% Two contributions from the Introduction are realized directly by the Orchestrator's control logic.
+% First, \emph{dynamic cost-aware strategy escalation}:
+% for a given target subquery $q_t$, the Orchestrator begins with a conservative (cheap) traversal configuration $\tau_t$ (e.g., local scope, coarse granularity, no LLM reranking) and escalates to stronger but more expensive settings (e.g., finer granularity, LLM reranking, or global hops) only when the Evaluator flags ambiguity or $\texttt{Failure}$.
+% Second, \emph{history-aware backtracking via re-anchoring}:
+% instead of reverting state, the Orchestrator leverages failure traces recorded in $H_t$ to select an alternative anchor document set $\mathcal{D}_{anc}$ from \emph{earlier} successful/near-successful contexts, revise the next subquery, and avoid repeating previously failed routing patterns.
+
+
+
+% When selecting $\textsc{Traverse}$, the Orchestrator jointly determines:
+% (i) the target subquery $q_t$ (possibly revised using failure traces),
+% (ii) the traversal strategy $\tau_t$ (possibly escalated),
+% and (iii) the anchor document set $\mathcal{D}_{anc}$.
+% It invokes $\textsc{Plan}(M_t)$ when a new subquery set is needed (e.g., initialization, missing constraints, or consecutive failures), and triggers $\textsc{Stop}$ when the subquery list $\mathcal{Q}_t$ and accumulated evidence indicate that further exploration is unlikely to improve the final ranking under the remaining budget.
+
+
+
+
+
+% \noindent\textbf{(2) Multi-strategy Traverser.}
+% The Traverser executes $a_t=\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$ on the layered graph $\mathcal{G}$ and returns newly retrieved evidence $(\mathcal{D}_{\text{new}}, \mathcal{C}_{\text{new}})$. %, recorded as $\mathcal{B}_t$ in memory.
+% It is a \emph{configurable strategy engine}, where $\tau_t$ configures various retrieval strategies that trade of accuracy--efficiency.
+% This is the key mechanism that enables our \emph{cost-aware strategy escalation}: the Orchestrator can start from a cheap configuration and selectively ``upgrade'' $\tau_t$ only when a hop is ambiguous or when a prior attempt fails.
+
+% To balance accuracy and cost under high local branching, it is factorized into:
+% (i) a \emph{document-level} stage that selects a small set of candidate documents using document-node summaries (Layer $V_0$), and
+% (ii) a \emph{component-level} stage that drills down via hierarchical edges to retrieve query-relevant component nodes (Layer $V_1$), producing $\mathcal{C}_{\text{new}}$.
+
+
+
+% \textbf{Strategy tuple.}
+% $\tau_t$ configures traversal along three dimensions (the core of our multi-strategy novelty):
+% \squishlist
+
+%     \item \textit{Hop Scope (Global vs.\ Local).}
+%     \emph{Local Hop} restricts candidate documents to the direct neighbors of the anchor document set $\mathcal{D}_{anc}$ via the children's navigation edges ($E_{nav}$);
+%     \emph{Global Hop} considers the full document corpus to escape local neighborhoods when evidence is dispersed.
+%     It performs a dense retrieval over layer $V_0$'s document summaries to search the most query-relevant document set.
+    
+%     \item \textit{Vector Scoring Granularity.}
+%     It configures the layer at which vector similarity is computed.
+%     Intuitively, coarse-grained subqueries are often best matched at the document/component level, while fine-grained subqueries benefit from scoring at the subcomponent level.
+%     The document-level traverser uses the granularities of $g\in\{0,1,2\}$ and the component-level uses $g\in\{1,2\}$.
+%     Let $\mathrm{Desc}_g(v)$ be descendants of $v$ at Layer $V_g$ (including $v$ if already in $V_g$), and $\mathrm{LI}(\cdot,\cdot)$ be late-interaction similarity. We score a node $v$ by
+%     \begin{equation}
+%         \textsc{Score}_{\mathrm{vec}}(q_t, v; g)
+%         \;=\;
+%         \max_{u \in \mathrm{Desc}_g(v)} sim(q_t, x(u))
+%     \end{equation}
+    
+%     \item \textit{LLM-Reasoning.}
+%     This option specifies whether to use LLM-based reasoning to accurately rerank components with $q_t$ beyond vector scores, supporting modes of $\{\texttt{None},\ \texttt{Component-only},\ \texttt{Both}\}$.
+%     To control LLM inference cost, we pre-filter top-$k$ candidates by $\textsc{Score}_{\mathrm{vec}}$ and then pass their contents $\{x(v)\}$ (and local context when relevant) to the LLM for reranking.
+    
+% \squishend
+
+
+
+
+
+% \noindent\textbf{(3) Subquery Planner.}
+% The Planner implements $a_t=\textsc{Plan}(M_t)$ and generates $\mathcal{Q}_{\text{new}}$ to resolve remaining information needs toward answering $Q$.
+% Using LLM inference, It produces an updated version of subquery sequence needed to solve the original query $Q$, conditioning on subquery statuses in $\mathcal{Q}_t$ and success/failure traces in $H_t$.
+
+
+
+
+
+% \noindent\textbf{(4) Traversal Evaluator.}
+% The Evaluator produces the traversal evaluation $e_t \in \{\texttt{Success},\texttt{Failure}\}$ given the attempted subquery and newly retrieved evidence $(q_t, \mathcal{B}_t)$, where $\mathcal{B}_t=(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$.
+% This signal is the core ``failure-as-feedback'' interface: on failure, the outcome is logged into $H_t$ and directly conditions subsequent decisions (e.g., escalation, re-anchoring, or replanning).
+% In addition, the Evaluator outputs \emph{subquery updates} $\Delta\mathcal{Q}^{(t)}=\big[(p_i, z_i, \alpha_i)\big]_{i=1}^{m^{(t)}}$, which operationalizes the observation definition in \textsection~\ref{sec:probform}.
+
+
+
+
+% \noindent\textbf{(5) Reranker}
+% The Reranker is invoked by $a_t=\textsc{Stop}$ to produce the final ranked list of components $\mathcal{R}$ from the accumulated memory $M_t$.
+% Concretely, it aggregates all candidate components stored across the trajectory and assigns each component a final relevance score with respect to the \emph{original} query $Q$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%% Version 4
+
+
+
+
+
+
+
+
+% %% Overview
+% At a high level, \textsc{\OurFullName} (\textsc{\Ours}) is an LLM-enabled agentic retriever that navigates the extended layered component graph $\mathcal{G}$ (Section~\ref{sec:lcg}).
+% Crucially, \textsc{\Ours} treats retrieval not as a fixed traversal recipe but as a \textit{sequential decision process}:
+% % at each hop, it decides \emph{what to ask} (a target subquery), \emph{how to retrieve} (a strategy along an accuracy--efficiency spectrum), and \emph{where to move} in the graph (edge type and granularity).
+% Concretely, at step $t$, the \textit{Orchestrator} selects one of the following actions: to traverse, to adjust plan or to stop traversing.
+% Traverse할 때는 a target subquery $q_t$, 어디서부터 traverse할지인 $\mathcal{D}_{anc}$, accuracy-efficiency를 밸런싱하는 traversal configuration $\tau_t$.
+% % It then invokes the \textit{Multi-strategy Traverser} to execute the hop and return newly retrieved documents/components.
+% adjust plan은 만약 이전의 step에서 연속적으로 실패했을 때, 이를 바로잡으려고 한다.
+% Stop은 traversal이 충분히 됐거나, 추가적인 traversal이 더이상 의미가 없어 보일 때.
+% Figure~\ref{fig:overview}를 보면 이들 간의 구조를 볼 수 있다.
+
+% To make multihop traversal robust in noisy open-domain graphs, \textsc{\Ours} persists a structured \emph{memory}---the subquery attempted, the strategy used, the retrieved evidence, and an explicit success/failure signal from the Evaluator---grounded in the principle that \emph{dead ends are informative}.
+% This history enables two adaptive behaviors central to our approach:
+% \emph{(i) cost-aware strategy escalation}, where the Orchestrator starts from low-cost strategies and escalates to stronger (but more expensive) reasoning only when the hop is ambiguous or fails; and
+% \emph{(ii) history-aware backtracking}, where failures are converted into actionable feedback to re-anchor the search to a prior context while avoiding previously failed routing patterns.
+
+% Figure~\ref{fig:overview}를 보면 예시 traversal이 나와 있다.
+% Memory $M_t$와 layered component graph $\mathcal{G}$를 보면, 첫 tool로 subquery planner를 call하여 $p_1, p_2, p_3$를 생성한다.
+% 그 후 $h_2$로 traversal을 진행하여 $D_1$, $C_{1, 2}, C_{1, 3}$을 retrieve하고, 이후에 $h_3, h_4$는 traversal에 실패한다.
+% 이후 replanning을 통해 adjustive하게 $p_4$를 생성하여 $\mathcal{Q}_5$에 append시키고, 마지막으로 $h_6$에 $D_4, D_5$ global hop을 하는 traversal을 성공시킴으로써 retrieval이 끝난다.
+
+
+% \begin{equation}
+% \begin{aligned}
+%     \mathcal{F}_t 
+%     &= \mathcal{D}^{(t^\star)} \cup \mathcal{C}^{(t^\star)}, \\
+%     t^\star 
+%     &= \max\{k \le t \mid a_k = \textsc{Traverse}(\cdot)\}.
+% \end{aligned}
+% \end{equation}
+%
+ % \begin{equation*}
+%     a_t \in \left\{
+%         \textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t),\;
+%         \textsc{Plan}(M_t),\;
+%         \textsc{Stop}
+%     \right\}
+%     \vspace{-2mm}
+% \end{equation*}
+    % The \textsc{Rerank} module can be instantiated as a lightweight similarity scorer or an LLM-based reranker, and is invoked only at termination.
+    
+    % \item $\textsc{Stop}$ terminates the overall process.
+    % Memory $M_t$ 내부에 있는 component들을 \textsc{Rerank} 함수에 넣어 $Q$에 대한 relevancy를 바탕으로 ranked list $\mathcal{R}$을 반환한다.
+    % % {\color{red} Rerank 개념도 간단히 설명}
+
+
+
+
+
+
+
+% Each tuple in $\Delta\mathcal{Q}^{(t)}$ states that the newly retrieved evidence supports updating a subquery $p_i$:
+% $z_i \in \{\texttt{Unsolved}, \texttt{Solved}, \texttt{Deprecated}\}$ is the updated status, and $\alpha_i$ is an extracted answer when available.
+% Typically, when $e_t=\texttt{Success}$, $\Delta\mathcal{Q}^{(t)}$ contains $(q_t,\texttt{Solved},\alpha_t)$, and it may also solve (or partially resolve) other currently unsolved subqueries if the same evidence supports them.
+% When $e_t=\texttt{Failure}$, $\Delta\mathcal{Q}^{(t)}$ is empty or contains only conservative status updates (e.g., leaving items \texttt{Unsolved}), ensuring that all progress reflected in the state is grounded in retrieved evidence.
+
+
+
+% \noindent\textbf{(3) Traversal Evaluator.}
+% The Evaluator produces the retrieval evaluation $e_t \in \{\texttt{Success},\texttt{Failure}\}$ given $(q_t,\mathcal{B}_t)$, and is a core part of the observation for the \texttt{Traverse} action.
+% On \texttt{Success}, it extracts an answer $\alpha$ for $q_t$ (and optionally for other currently unsolved subqueries also supported by $\mathcal{B}_t$) and marks them \texttt{Solved};
+% otherwise it emits \texttt{Failure}, which is logged in $H_t$ and used as feedback.
+% {\color{red} output 추가 정의}
+
+
+
+
+
+
+% To remain consistent with our economically-rational design, the Reranker can be instantiated as either:
+% (i) a lightweight similarity-based scorer for low-cost termination, or
+% (ii) a two-stage reranker that pre-filters candidates by vector scores and applies an LLM to rerank a small top-$k$ set when higher precision is warranted.
+% When available, the Reranker may include lightweight local context (e.g., captions or adjacent components within the same document) to better evaluate component-level relevance in multimodal documents.
+
+
+
+% The Orchestrator is an LLM-driven central controller that selects the next action using the current memory $M_t$.
+% At each decision iteration, it chooses whether to (i) continue exploration via $\textsc{Traverse}$, (ii) request new subqueries via $\textsc{Plan}(M_t)$, or (iii) terminate with $\textsc{Stop}$, aiming to achieve accurate retrieval under a limited budget.
+% A key design principle is that \emph{failures are feedback}: the Orchestrator explicitly leverages past unsuccessful attempts recorded in $H_t$ to avoid repeating unproductive routing patterns and to revise subsequent decisions.
+
+
+
+% When selecting $\textsc{Traverse}$, the Orchestrator jointly chooses the target subquery $q_t$, the traversal strategy $\tau_t$, and the anchor document set $\mathcal{D}_{anc}$.
+% History-aware backtracking is implemented through \emph{re-anchoring}: instead of expanding only from the current frontier, the Orchestrator can select $\mathcal{D}_{anc}$ from a prior traversal record in $H_t$ and resume traversal from that earlier context (Section~\ref{sec:probform}).
+% This mechanism provides multiple degrees of freedom for correction:
+% (i) it can adjust $\tau_t$ to enable cost-aware strategy escalation (e.g., start with minimal LLM usage and escalate to more thorough reasoning when a hop fails),
+% (ii) it can revise $q_t$ to explore alternative entities/constraints when a previously chosen interpretation leads to a dead end, and
+% (iii) it can change the anchor context by re-anchoring to an earlier, more promising neighborhood.
+
+
+
+% The Orchestrator invokes $\textsc{Plan}(M_t)$ when a new plan is needed, such as at initialization (to decompose $Q$ into an initial $\mathcal{Q}_t$) or after consecutive traversal failures (to introduce refined or missing subqueries that redirect the search).
+% Finally, it triggers $\textsc{Stop}$ when $M_t$ indicates that the original query $Q$ is answerable with the accumulated evidence, or when further exploration is unlikely to yield additional useful evidence under the remaining budget.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%% Version 3 (Verbose version)
+
+
+
+% \subsection{Problem Formulation: Sequential Decision Process}
+% \label{sec:probform}
+
+
+
+% We formulate open-domain multimodal retrieval as a finite-horizon sequential decision process.
+% The objective is to retrieve a subgraph from the layered component graph $\mathcal{G}$ to generate an ordered list of relevant components. 
+% In such an environment, the agent must iteratively traverse the graph to construct the evidence subgraph, as the graph structure $\mathcal{G}$ is too massive for effective retrieval via a single LLM call or naive vector search.
+% We define this process tuple $\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R} \rangle$.
+% Specifically, we model an information-state MDP: the Markov state is the agent's information state $s_t$.
+% At each step, executing an action produces newly returned tool/evaluator outputs $o_t$, which are immediately integrated into $s_{t+1}$ via the transition.
+
+
+
+
+
+
+% \noindent\textbf{State ($\mathcal{S}$).}
+% A state $s_t \in \mathcal{S}$ represents the \emph{agent's current knowledge} (information state), comprising the discovered evidence and a structured memory.
+% In our formulation, we represent the information state as a structured memory and set $s_t = M_t$.
+% Since $M_t$ stores all retrieved evidence in the trajectory, it implicitly defines the discovered evidence subgraph (i.e., the subgraph induced by retrieved nodes/edges).
+
+% \textbf{Memory ($M_t$)} is a \emph{trajectory log} that records both decisions and their outcomes.
+% We define memory as a tuple $M_t = (Q, \mathcal{Q}_t, H_t)$:
+% \squishlist
+%     \item \textit{Original Query ($Q$):} The user's initial input.
+
+%     \item \textit{Subquery List ($\mathcal{Q}_t$):}
+%     A dynamic list $[p_i, z_i, \alpha_i)]_{i=1}^{m_t}$ tracking the decomposition of $Q$ (where $m_t = |\mathcal{Q}_t|$).
+%     Each $p_i$ has a status $z_i \in \{\textsc{Unsolved}, \textsc{Solved}, \textsc{Deprecated}\}$ and an optional answer $\alpha_i$.
+%     Here, $\textsc{Deprecated}$ indicates a subquery that has been superseded by a refined formulation but is retained for auditability.
+
+%     \item \textit{Tool Usage History ($H_t$):}
+%     An ordered sequence $[h_1, \ldots, h_t]$ recording the agent's trajectory.
+%     Each record $h_k$ is a union-type log record that stores either (i) a traversal record or (ii) a planning record.
+%     For a traversal record, $h_k$ stores the \emph{target subquery} ($q_k$), the \emph{strategy} used ($\tau_k$), the \emph{retrieved documents and components} ($\mathcal{B}_k$), and the \emph{retrieval evaluation}
+%     ($e_k \in \{\textsc{Success}, \textsc{Failure}\}$), where
+%     \begin{equation}
+%         \mathcal{B}_k \;=\; \big(\mathcal{D}^{(k)},\ \mathcal{C}^{(k)}\big)
+%     \end{equation}
+%     denotes the retrieved documents and components at step $k$.
+%     For a planning record, $h_k$ stores the newly generated subqueries/refinements $\mathcal{Q}_{\text{new}}$.
+    
+% \squishend
+% We define the current frontier as the most recent retrieved evidence in the history, i.e.,
+% \begin{equation}
+% \begin{aligned}
+%     \mathcal{F}_t 
+%     &= \mathcal{D}^{(t^\star)} \cup \mathcal{C}^{(t^\star)}, \\
+%     t^\star 
+%     &= \max\{k \le t \mid a_k = \textsc{Traverse}(\cdot)\}.
+% \end{aligned}
+% \end{equation}
+% which is used as the anchor set for subsequent local expansions.
+
+
+
+% \noindent\textbf{Action ($\mathcal{A}$).}
+% An action $a_t \in \mathcal{A}$ is a structured tool call chosen by the orchestrator (policy) based on the current state $s_t$.
+% We consider \emph{three} action families:
+% \begin{equation}
+%     a_t \in \left\{
+%         \textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t),\;
+%         \textsc{Plan}(M_t),\;
+%         \textsc{Stop}
+%     \right\}
+% \end{equation}
+% where:
+% \squishlist
+%     \item $\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$ executes a retrieval hop for subquery $q_t$ using strategy $\tau_t$ from an \emph{anchor document set} $\mathcal{D}_{anc} \subseteq \mathcal{D}$.
+%     Typically, $\mathcal{D}_{anc}$ is derived from the current frontier $\mathcal{F}_t$ for local expansion; selecting $\mathcal{D}_{anc}$ from an earlier traversal record in $H_t$ corresponds to re-anchoring (i.e., backtracking) in a history-aware manner.
+
+%     \item $\textsc{Plan}(M_t)$ generates new subqueries $\mathcal{Q}_{\text{new}}$ to solve the original query $Q$.
+%     It consults the current subquery list $\mathcal{Q}_t$ (to check what is already solved/unsolved) and the retrieval/tool usage history $H_t$ (to leverage successes/failures and avoid repeating unproductive patterns).
+
+%     \item \textsc{Stop} terminates the process when either (i) the original query $Q$ is answerable using the current memory $M_t$, or (ii) the memory indicates that further exploration is unlikely to yield additional useful evidence (e.g., repeated failures under diverse strategies).
+% \squishend
+
+
+
+
+% \noindent\textbf{Observation ($o_t$).}
+% An observation $o_t$ captures the \emph{immediate outputs} produced by executing action $a_t$, including newly returned tool results and internal module outputs.
+% Unlike the accumulated state, $o_t$ contains only the new information generated at the current step.
+% For $\textsc{Traverse}$, the observation is the newly retrieved evidence; for $\textsc{Plan}$, it is the generated subqueries:
+% \begin{equation}
+%     o_t =
+%     \begin{cases}
+%         (\mathcal{D}^{(t)}, \mathcal{C}^{(t)}, e_t), & a_t = \textsc{Traverse}(\cdot), \\
+%         \mathcal{Q}_{\text{new}}, & a_t = \textsc{Plan}.
+%     \end{cases}
+% \end{equation}
+% where $\mathcal{D}^{(t)}$ and $\mathcal{C}^{(t)}$ are the newly retrieved documents and components at step $t$, respectively,
+% $e_t$ is the evaluation of the retrieval, and $\mathcal{Q}_{\text{new}}$ is the list of new subqueries or refinements.
+
+
+
+
+% \noindent\textbf{Transition ($\mathcal{T}$).}
+% The transition function updates the state by integrating the per-step tool outputs: $s_{t+1} \leftarrow \textsc{Update}(s_t, a_t, o_t)$.
+% Equivalently, the MDP transition kernel $p(s_{t+1}\mid s_t,a_t)$ is induced by the stochastic tool outcomes summarized by $o_t$ and the deterministic update operator.
+% \squishlist
+%     \item If $a_t = \textsc{Traverse}(\cdot)$:
+%     the observation provides newly retrieved evidence $(\mathcal{D}^{(t)}, \mathcal{C}^{(t)})$ and an evaluation signal $e_t$.
+%     We set $\mathcal{B}_t = (\mathcal{D}^{(t)}, \mathcal{C}^{(t)})$ and append a traversal record $h_t$ to $H_t$ that stores $(q_t, \tau_t, \mathcal{B}_t, e_t)$.
+%     Thus, the per-step outputs $(\mathcal{D}^{(t)}, \mathcal{C}^{(t)})$ are recorded in memory exactly as $\mathcal{B}_t$ for auditability and future decision-making (e.g., frontier selection and failure-aware replanning).
+%     % TODO: \mathcal{Q} update하는 것.
+
+%     \item If $a_t = \textsc{Plan}$:
+%     the new subqueries $\mathcal{Q}_{\text{new}}$ are \emph{appended} to the existing list $\mathcal{Q}_t$ to form $\mathcal{Q}_{t+1}$.
+%     This expansion preserves the history of query evolution rather than overwriting it.
+%     Originally existing $\textsc{Unsolved}$ subqueries are marked as $\textsc{Deprecated}$.
+
+%     \item If $a_t = \textsc{Stop}$: the episode terminates.
+% \squishend
+% This explicit update ensures that failures and reasoning steps are permanently recorded in the state, enabling history-aware decision-making in future steps.
+
+% \noindent\textbf{Reward ($\mathcal{R}$).}
+% The reward function reflects retrieval utility and is aligned with the termination criteria of \textsc{Stop}.
+% Conceptually, the terminal reward is computed from the quality of the final ordered component list induced by the retrieved evidence (i.e., the evidence subgraph implicitly defined by $M_T$), such as Recall@$K$ or other task-specific utility.
+
+
+
+
+
+
+
+
+% \subsection{Tool Details}
+% \label{sec:tools}
+
+% This section describes the tools that constitute \textsc{\Ours} and explains how each tool instantiates the actions and per-step outputs defined in \textsection~\ref{sec:probform}.
+
+
+
+
+% \noindent\textbf{(1) Multi-strategy Traverser.}
+% This tool implements the traversal action $a_t=\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$ and executes a retrieval hop on the layered component graph $\mathcal{G}$ to expand the discovered evidence.
+% Given an anchor document set $\mathcal{D}_{anc}$ (typically derived from the current frontier $\mathcal{F}_t$; cf.\ \textsection~\ref{sec:probform}), a target subquery $q_t$, and a strategy configuration $\tau_t$, the Traverser explores the neighborhood induced by $\mathcal{G}$ and returns newly retrieved documents and components $(\mathcal{D}_{\text{new}}, \mathcal{C}_{\text{new}})$, which form the observation for the step and are recorded in memory (as $\mathcal{B}_t=(\mathcal{D}^{(t)},\mathcal{C}^{(t)})$ in \textsection~\ref{sec:probform}).
+
+% Internally, the Traverser is factorized into a \emph{document-level traverser} and a \emph{component-level traverser} to balance accuracy and efficiency.
+% Naively passing all neighbor components of $\mathcal{D}_{anc}$ to an LLM is often infeasible: the local branching factor can be large, yielding overly long contexts that degrade both effectiveness and cost.
+% Instead, the document-level traverser first selects a small set of candidate documents to explore using the concise summaries stored at document nodes (Layer $V_0$).
+% Conditioned on these selected documents, the component-level traverser then drills down via hierarchical edges to retrieve the most query-relevant set of child component nodes (Layer $V_1$), producing $\mathcal{C}_{\text{new}}$.
+
+% The strategy $\tau_t$ is a configuration tuple that determines the traversal behavior across three dimensions:
+% \squishlist
+
+%     \item \textit{Global vs.\ Local Hop:}
+%     This option primarily controls the document-level traverser, i.e., how to form the candidate document set for the hop.
+%     In a \emph{Local Hop}, the traverser restricts candidates to documents reachable from $\mathcal{D}_{anc}$ by following document-level navigational edges ($E_{nav}$) in $\mathcal{G}$.
+%     In a \emph{Global Hop}, the traverser considers all documents in the corpus (e.g., via dense retrieval over document summaries), which is necessary when successive supporting components are not contained within the local neighborhood of $\mathcal{D}_{anc}$.
+
+%     \item \textit{Vector Scoring Granularity:}
+%     This option specifies the layer at which vector similarity is computed, and applies to both the document-level and component-level stages.
+%     Intuitively, coarse-grained subqueries are often best matched at the document/component level, while fine-grained subqueries benefit from scoring at the subcomponent level.
+%     Accordingly, the document-level traverser may choose a target granularity $g \in \{0,1,2\}$, while the component-level traverser uses $g \in \{1,2\}$.
+%     Concretely, let $\mathrm{Desc}_g(v)$ denote the set of descendants of node $v$ at Layer $V_g$ (including $v$ itself if it is already in $V_g$), and let $\mathrm{LI}(\cdot,\cdot)$ denote the late-interaction similarity between a subquery and a node's stored content.
+%     We define the vector score for a node $v$ under granularity $g$ as:
+%     \begin{equation}
+%         \textsc{Score}_{\mathrm{vec}}(q_t, v; g)
+%         \;=\;
+%         \max_{u \in \mathrm{Desc}_g(v)} \mathrm{LI}\!\big(q_t, x(u)\big),
+%     \end{equation}
+%     i.e., we score $v$ by first selecting its descendants at the target layer and then taking the maximum late-interaction similarity.
+%     This enables coarse-to-fine matching within a unified scoring interface across layers.
+
+%     \item \textit{LLM-Reasoning:}
+%     This option specifies whether to use LLM-based reasoning (beyond vector similarity) during traversal, and can be applied at the document level, the component level, or both.
+%     We support three modes: \{\textsc{None}, \textsc{Component-only}, \textsc{Both}\}.
+%     \textsc{Component-only} means the document-level stage uses only vector scoring, while the component-level stage additionally applies an LLM to rerank or filter candidates for $q_t$.
+%     \textsc{Both} is the most thorough setting, enabling LLM-based reranking in both stages.
+%     To control cost, when LLM reasoning is enabled, the traverser first uses vector scoring to pre-filter the top-$k$ candidate nodes and then provides their contents $\{x(v)\}$ (and, when relevant, local edge/context information) to the LLM for final selection.
+    
+% \squishend
+
+
+
+
+% \noindent\textbf{(2) Subquery Planner.}
+% This tool manages the evolution of the information state by implementing the planning action $a_t = \textsc{Plan}(M_t)$.
+% Given the current memory $M_t = (Q, \mathcal{Q}_t, H_t)$, the Planner generates $\mathcal{Q}_{\text{new}}$, i.e., \emph{additional} subqueries that are necessary to resolve the remaining information needs in $\mathcal{Q}_t$ and ultimately answer $Q$.
+% In practice, the Planner leverages (i) the current subquery statuses in $\mathcal{Q}_t$ (to identify what is solved/unsolved/deprecated) and (ii) the tool-usage history $H_t$ (to interpret prior successes/failures) to predict what information should be retrieved next and how the current decomposition should be refined.
+% Accordingly, $\mathcal{Q}_{\text{new}}$ may decompose an unsolved subquery into prerequisite steps, introduce new subqueries targeting missing information, or produce refined/disambiguated variants of previously failed or underspecified subqueries.
+
+% Upon integration by $\textsc{Update}$, $\mathcal{Q}_{\text{new}}$ is appended to the existing list $\mathcal{Q}_t$ to form $\mathcal{Q}_{t+1}$.
+% When a new subquery explicitly refines or replaces a prior one, the replaced item is retained for auditability but may be marked as \textsc{Deprecated}.
+
+
+
+
+% \noindent\textbf{(3) Traversal Evaluator.}
+% The Evaluator produces the retrieval evaluation $e_t \in \{\textsc{Success},\textsc{Failure}\}$, which is a core part of the observation for the \textsc{Traverse} action.
+% Given the current target subquery $q_t$ and the newly retrieved evidence $\mathcal{B}_t=(\mathcal{D}_{\text{new}},\mathcal{C}_{\text{new}})$, it assesses whether the evidence is sufficient and non-redundant for resolving $q_t$.
+% In addition, the Evaluator may check whether the same evidence also resolves \emph{other} currently unsolved subqueries in $\mathcal{Q}_t$ (i.e., a single hop can satisfy multiple subgoals).
+% If the evidence supports $q_t$, it returns $\textsc{Success}$ and extracts an answer $\alpha$ for $q_t$; if it also supports other subqueries, it extracts answers for them as well and marks the corresponding entries in $\mathcal{Q}_t$ as \textsc{Solved}.
+% Otherwise, it emits a \textsc{Failure} signal, which is recorded in $H_t$ and later used as feedback by the Orchestrator.
+
+
+
+
+
+% \noindent\textbf{(4) Orchestrator.}
+% The Orchestrator is an LLM-driven central controller that selects the next action using the current memory $M_t$.
+% At each decision iteration, it chooses whether to (i) continue exploration via $\textsc{Traverse}$, (ii) request new subqueries via $\textsc{Plan}(M_t)$, or (iii) terminate with $\textsc{Stop}$, aiming to achieve accurate retrieval under a limited budget.
+% A key design principle is that \emph{failures are feedback}: the Orchestrator explicitly leverages past unsuccessful attempts recorded in $H_t$ to avoid repeating unproductive routing patterns and to revise subsequent decisions.
+
+% When selecting $\textsc{Traverse}$, the Orchestrator jointly chooses the target subquery $q_t$, the traversal strategy $\tau_t$, and the anchor document set $\mathcal{D}_{anc}$.
+% History-aware backtracking is implemented through \emph{re-anchoring}: instead of expanding only from the current frontier, the Orchestrator can select $\mathcal{D}_{anc}$ from a prior traversal record in $H_t$ and resume traversal from that earlier context (Section~\ref{sec:probform}).
+% This mechanism provides multiple degrees of freedom for correction:
+% (i) it can adjust $\tau_t$ to enable cost-aware strategy escalation (e.g., start with minimal LLM usage and escalate to more thorough reasoning when a hop fails),
+% (ii) it can revise $q_t$ to explore alternative entities/constraints when a previously chosen interpretation leads to a dead end, and
+% (iii) it can change the anchor context by re-anchoring to an earlier, more promising neighborhood.
+
+% The Orchestrator invokes $\textsc{Plan}(M_t)$ when a new plan is needed, such as at initialization (to decompose $Q$ into an initial $\mathcal{Q}_t$) or after consecutive traversal failures (to introduce refined or missing subqueries that redirect the search).
+% Finally, it triggers $\textsc{Stop}$ when $M_t$ indicates that the original query $Q$ is answerable with the accumulated evidence, or when further exploration is unlikely to yield additional useful evidence under the remaining budget.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%% Version 2
+
+
+% Overview
+
+% \textsc{\Ours} implements the action space $\mathcal{A}$ in Sec.~\ref{sec:probform} through a set of specialized tools. 
+% At step $t$, the Orchestrator (policy) conditions on the full information state $s_t=(\mathcal{G}_t,M_t)$ and selects an action
+% $a_t \in$ $\{\textsc{Traverse}(q_t,\tau_t),\ $ $\textsc{Plan}(M_t),\ $ $\textsc{Backtrack}(h_\kappa,q_t,\tau_t),\ $ $\textsc{Stop}\}$.
+% Executing this action produces per-step tool/evaluator outputs $o_t$: for traversal-family actions, the Traverser retrieves newly discovered evidence $(\mathcal{D}_{\text{new}},\mathcal{C}_{\text{new}})$ and the Evaluator returns the retrieval evaluation $e_t$ (and optionally an extracted answer), jointly forming the observation $o_t$; for planning actions, the Planner outputs $\mathcal{Q}_{\text{new}}$.
+% These outputs are then integrated by the deterministic update operator $\textsc{Update}(s_t,a_t,o_t)$, which (i) merges new nodes/edges into $\mathcal{G}_{t+1}$, (ii) appends a union-type record to the trajectory log $H_{t+1}$, and (iii) updates the subquery list $\mathcal{Q}_{t+1}$ (including marking replaced items as \textsc{Deprecated}).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% Formulation
+
+% We formulate open-domain multimodal retrieval as a finite-horizon sequential decision process.
+% The objective is to retrieve a subgraph from the layered component graph $\mathcal{G}$ to generate an ordered list of relevant components. 
+% In such an environment, the agent must iteratively traverse the graph to construct the evidence subgraph, as the graph structure $\mathcal{G}$ is too massive for effective retrieval via a single LLM call or naive vector search.
+% We define this process tuple $\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R} \rangle$.
+% Specifically, we model an information-state MDP: the Markov state is the agent's information state $s_t$.
+% At each step, executing an action produces newly returned tool/evaluator outputs $o_t$, which are immediately integrated into $s_{t+1}$ via the transition.
+
+
+% \noindent\textbf{State ($\mathcal{S}$).}
+% A state $s_t \in \mathcal{S}$ represents the \emph{agent's current knowledge} (information state), comprising the discovered evidence subgraph and a structured memory.
+% Formally, $s_t = (\mathcal{G}_t, M_t)$.
+% \squishlist
+%     \item \textbf{Evidence Subgraph ($\mathcal{G}_t$):}
+%     The subset of the corpus discovered up to step $t$.
+%     $\mathcal{G}_t=(\mathcal{V}_t,\mathcal{E}_t)$ contains the visited documents ($V_0$), components ($V_1$), and subcomponents ($V_2$), along with their induced edges.
+
+%     \item \textbf{Memory ($M_t$):}
+%     To support history-aware planning and backtracking, the agent maintains a \emph{trajectory log} that records both decisions and their outcomes.
+%     We define memory as a tuple $M_t = (Q, \mathcal{Q}_t, H_t)$:
+%     \squishlist
+    
+%         \item \textit{Original Query ($Q$):} The user's initial input.
+
+%         \item \textit{Subquery List ($\mathcal{Q}_t$):}
+%         A dynamic list $[(q_i, z_i, \alpha_i)]_{i=1}^{m_t}$ tracking the decomposition of $Q$.
+%         Each $q_i$ has a status $z_i \in \{\textsc{Unsolved}, \textsc{Solved}\}$ and an optional answer $\alpha_i$.
+
+%         \item \textit{Traversal History ($H_t$):}
+%         An ordered sequence $[h_1,\ldots,h_t]$ recording the agent's trajectory.
+%         Each step $h_t$ stores the \emph{target subquery} ($q_t$), the \emph{strategy} used ($\tau_t$), the \emph{retrieved documents and components} ($\mathcal{R}_t$), and the \emph{retrieval evaluation} ($e_t \in \{\textsc{Success}, \textsc{Failure}\}$), where
+%         \begin{equation}
+%             \mathcal{R}_t \;=\; \big(\mathcal{D}_{\text{new}}^{(t)},\ \mathcal{C}_{\text{new}}^{(t)}\big)
+%         \end{equation}
+%         denotes the retrieved documents and components at step $t$.
+%         We define the current frontier as the most recent retrieved evidence in the history, i.e.,
+%         \begin{equation}
+%             \mathcal{F}_t \;=\; \mathcal{R}_{t^\star}, \qquad t^\star=\max\{\tau \le t \mid h_\tau \text{ is a traversal step}\},
+%         \end{equation}
+%         which is used as the anchor set for subsequent local expansions.
+%     \squishend
+% \squishend
+
+
+
+% \noindent\textbf{Action ($\mathcal{A}$).}
+% An action $a_t \in \mathcal{A}$ is a structured tool call chosen by the orchestrator (policy) based on the current state $s_t$. We consider four action families:
+% \begin{equation}
+%     a_t \in \left\{
+%     \begin{aligned}
+%         & \textsc{Traverse}(q_t, \tau_t),\; \textsc{Plan}(M_t), \\
+%         & \textsc{Backtrack}(h_\kappa, q_t, \tau_t),\; \textsc{Stop}
+%     \end{aligned}
+%     \right\}
+% \end{equation}
+% where:
+% \squishlist
+%     \item $\textsc{Traverse}(q_t, \tau_t)$ executes a standard retrieval hop for subquery $q_t$ using strategy $\tau_t$ (e.g., retrieval mode, granularity) from the current frontier.
+%     \item $\textsc{Plan}(M_t)$ invokes the reasoning engine to decompose or refine the subquery list $\mathcal{Q}_t$ based on the accumulated evidence in memory $M_t$.
+%     \item $\textsc{Backtrack}(h_\kappa, q_t, \tau_t)$ resets the traversal context to a prior history record $h_\kappa \in H_t$ and immediately executes a new traversal for $q_t$ using strategy $\tau_t$.
+%     \item \textsc{Stop} terminates the process when either (i) all subqueries are solved, i.e., $\forall (q_i,z_i,\alpha_i)\in\mathcal{Q}_t,\ z_i=\textsc{Solved}$, or (ii) the memory indicates that further exploration is unlikely to yield additional useful evidence (e.g., repeated failures under diverse strategies or budget saturation).
+% \squishend
+
+
+
+% \noindent\textbf{Observation ($\mathcal{O}$).}
+% An observation $o_t \in \mathcal{O}$ captures the \emph{immediate outputs} produced by executing action $a_t$, including newly returned tool results and internal module outputs.
+% Unlike the accumulated state, $o_t$ contains only the new information generated at the current step.
+% For $\textsc{Traverse}$ and $\textsc{Backtrack}$, the observation is the newly retrieved evidence; for $\textsc{Plan}$, it is the generated subqueries:
+% \begin{align}
+%     o_t = \begin{cases}
+%         (\mathcal{D}_{\text{new}}, \mathcal{C}_{\text{new}}, e_t) & \text{if } a_t \in \{\textsc{Traverse}, \textsc{Backtrack}\} \\
+%         (\mathcal{Q}_{\text{new}}) & \text{if } a_t = \textsc{Plan}
+%     \end{cases}
+% \end{align}
+% where $\mathcal{D}_{\text{new}}$ and $\mathcal{C}_{\text{new}}$ are the newly retrieved documents and components, respectively,
+% $e_t$ is the evaluation of the retrieval, and $\mathcal{Q}_{\text{new}}$ is the list of new subqueries or refinements.
+
+
+
+% \noindent\textbf{Transition ($\mathcal{T}$).}
+% The transition function updates the state by integrating the observation: $s_{t+1} \leftarrow \textsc{Update}(s_t, a_t, o_t)$.
+% \squishlist
+
+%     \item If $a_t \in \{\textsc{Traverse}, \textsc{Backtrack}\}$:
+%     The newly retrieved documents and components $(\mathcal{D}_{\text{new}}, \mathcal{C}_{\text{new}})$ are merged into the evidence subgraph $\mathcal{G}_{t+1}$.
+%     We then include the induced edges among newly added nodes and between new and previously discovered nodes to update $\mathcal{E}_{t+1}$.
+%     The action details and the outcome ($e_t$) are appended to the history $H_{t+1}$ in $M_{t+1}$, with $\mathcal{R}_{t+1} = (\mathcal{D}_{\text{new}}, \mathcal{C}_{\text{new}})$ recorded as the retrieved evidence for this step.
+    
+%     \item If $a_t = \textsc{Plan}$: 
+%     The new subqueries $\mathcal{Q}_{\text{new}}$ are \emph{appended} to the existing list $\mathcal{Q}_t$. 
+%     This expansion preserves the history of query evolution (e.g., initial vague queries followed by refined ones) rather than overwriting it.
+    
+%     \item If $a_t=\textsc{Stop}$: The episode terminates.
+    
+% \squishend
+% This explicit update ensures that failures and reasoning steps are permanently recorded in the state, enabling history-aware decision-making in future steps.
+
+
+% \noindent\textbf{Reward ($\mathcal{R}$).}
+% The reward function reflects retrieval utility and is aligned with the termination criteria of \textsc{Stop}.
+% Conceptually, the terminal reward is computed from the quality of the final ordered component list induced by the retrieved evidence in $\mathcal{G}_T$ (e.g., Recall@$K$ or task-specific utility).
+
+
+% We formulate open-domain multimodal retrieval as a finite-horizon sequential decision process.
+% 본 process는 Retrieval의 대상이 layered component graph $\mathcal{G}$이고, 이것의 subgraph를 retrieve하여 ordered list of component를 생성하는 것이 목적이다.
+% % The environment is the layered component graph $\mathcal{G}=(\mathcal{V},\mathcal{E})$ (\textsection~\ref{sec:probdef}), but the agent cannot observe the full graph initially.
+% $\mathcal{G}$는 그 크기가 너무 크기에 한 번의 LLM call로는 effective한 retrieval이 어렵고, naive한 vector search로도 어렵다.
+% Instead, it must iteratively traverse the graph to construct a subgraph to return. 
+% We define the such process tuple $\langle \mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R}, \mathcal{O} \rangle$ as follows:
+
+
+
+
+
+
+
+
+
+
+% 이 섹션에서는 \textsc{\Ours}를 구성하는 tool들에 대한 설명과, 이들이 \textsection~\ref{sec:probform}의 개념들과 어떻게 대응되는지 설명한다.
+
+
+% \noindent\textbf{(1) Multi-strategy Traverser.}
+% This tool corresponds to the action of $a_t=\textsc{Traverse}(\mathcal{D}_{anc}, q_t, \tau_t)$, and executes the retrieval actions to expand the evidence subgraph.
+% 이전에 traversal을 진행하고 있던 document $\mathcal{D}_{anc}$로부터 추가적인 traversal을 $\mathcal{G}$ graph 상에서 진행하는 역할을 맡는다.
+% 이 과정에서 찾고자 하는 target component들은 $q_t$를 answer하기 위한 component들이며, 이를 실행하는 여러 strategy 중 하나가 $\tau_t$로 주어진다.
+% Returning newly retrieved documents and components $(\mathcal{D}_{\text{new}},\mathcal{C}_{\text{new}})$.
+% % 이 때 \textsc{Traverse}의 경우 frontier를 기준으로, \textsc{Backrrack}의 경우 $h_\kappa$의 retrieved documents를 기준으로 hop을 진행한다 -> 이거 notation 정의 placeholder로 `A`라고 둠.
+
+% 이 tool은 내부적으로 document-level traverser과 component-level traverser로 나뉘는데, accuracy와 efficiency를 balancing하기 위함이다.
+% Naive하게 $\mathcal{D}_{anc}$의 neighbor component를 모두 LLM에 넣으면 context의 길이가 너무 길어져 accuracy와 efficiency 모두가 낮아지고, as 평균적으로 traversal을 진행할 때에는 neighbor component의 개수가 x개가 되기 때문이다.
+% 일차적으로 document-level traverser는 traversal을 진행할 document $\mathcal{D}_t$를 솎아내는데, 이 과정에서 document node의 summary를 이용한다.
+% Document가 결정되면 추후 component-level traverser가 child component node 중에서 가장 query-relevant한 set $\mathcal{C}_t$를 찾아낸다.
+
+% The strategy $\tau_t$ is a configuration tuple that determines the traversal behavior across three dimensions:
+% \squishlist
+%     \item \textit{Global vs.\ Local Hop:} 
+%     document-level traverser에 관한 strategy로, 어떤 document를 대상으로 traversal을 진행할지를 결정한다.
+%     \emph{Local Hop}는 $\mathcal{D}_{anc}$로부터 document-level Navigational Edges ($E_{nav}$)를 사용하여 neighbor document들만을 고려하며, 
+%     \emph{Global Hop} 에서는 모든 document를 고려한다.
+%     Global hop을 고려하는 이유는, consecutive하게 찾아야 하는 두 component가 neighboring document 안에 없는 경우를 고려하기 위해서임.
+
+%     \item \textit{Vector Scoring Granularity:} 
+%     어떤 레벨에서 vector similarity를 비교할 것인지를 나타내며, document-level traverser 및 document-level traverser 모두에 해당한다.
+%     Subquery $q_t$가 coarse-grained한 정보를 찾는다면 component나 document level에서 vector 비교를 하는 편이 효과적일 거고, fine-grained한 정보를 찾는다면 subcomponent level까지 내려가는 것이 효과적일 것이다.
+%     이를 위해 document-level traverser는 granularity로 layer number 0, 1, 2를 받으며, component-level traverser는 1, 2를 받는다.
+%     실제 계산은 late interaction을 통해 진행되며, 식은 다음과 같다.
+%         * 식은 subquery $q_t$, node $v$에 대해서 정의되며, target level의 descendant를 찾은 후에 similarity를 잰 후에 max 값을 취한다. -> 식으로 표현. 식이 너무 길어질 것 같으면 abbreviation 써도 됨.
+    
+%     \item \textit{LLM-Reasoning:} 
+%     Traversal 과정에서 LLM reasoning을 사용할 것인지를 나타내며, document-level traverser과 documnet-level traverser 모두에 해당한다.
+%     각 
+%     가능한 strategy는 {None, Component-only, Both}이며, component-only는 component-level traverser에서만 LLM reasoning을 사용하겠다는 것을 의미한다.
+%     Both는 가장 thorough한 경우로, 양쪽 모두에서 LLM을 이용하는 것.
+%     LLM의 경우 줄 때는 vector search로 일차적으로 filtering한 $k$ 개의 node에 대한 정보 $x(v)$를 주게 된다.
+    
+% \squishend
+
+
+% \noindent\textbf{(2) Subquery Planner.}
+% This tool manages the evolution of the information state by implementing the planning action $a_t = \textsc{Plan}(M_t)$.
+% Given the current memory $M_t = (Q, \mathcal{Q}_t, H_t)$, the Planner generates $\mathcal{Q}_{\text{new}}$, i.e., new subqueries $\mathcal{Q}$를 풀기 위해 추가적으로 풀어야 하는.
+% 이런 것들은 기존의 $\mathcal{Q}$의 dependency를 업데이트하거나, missing information or disambiguate previously failed/vague subqueries를 포함할 수 있다..
+% Upon integration by $\textsc{Update}$, $\mathcal{Q}_{\text{new}}$ is appended to the existing list $\mathcal{Q}_t$; when a new subquery explicitly replaces a prior one, the replaced item is retained but may be marked as \textsc{Deprecated}.
+
+%(i) decompose an unsolved subquery into prerequisite steps (thereby updating the implicit dependency/ordering among subgoals), (ii) target missing information not covered by the current subquery set, or (iii) disambiguate previously failed or underspecified subqueries by producing refined versions with clearer constraints.
+% To do so, the Planner consults $\mathcal{Q}_t$ and $H_t$ (to leverage past tool outcomes and avoid repeating unproductive patterns).
+
+
+
+
+
+
+% \noindent\textbf{(2) Subquery Planner.}
+% This tool manages the evolution of the information state by implementing the planning action $a_t = \textsc{Plan}(M_t)$.
+% Given the current memory $M_t = (Q, \mathcal{Q}_t, H_t)$, the Planner generates $\mathcal{Q}_{\text{new}}$, i.e., \emph{additional} subqueries that are necessary to resolve the remaining information needs in $\mathcal{Q}_t$ and ultimately answer $Q$.
+% In practice, $\mathcal{Q}_{\text{new}}$는 기존의 풀린 subquery 정보 $\mathcal{Q}$  (to identify what is solved/unsolved/deprecated)와 memory $M_t$를 봄으로써 추가적으로 retrieve해야 하는 경로를 예측한다.
+% Upon integration by $\textsc{Update}$, $\mathcal{Q}_{\text{new}}$ is appended to the existing list $\mathcal{Q}_t$ to form $\mathcal{Q}_{t+1}$.
+% When a new subquery explicitly refines or replaces a prior one, the replaced item is retained for auditability but may be marked as \textsc{Deprecated}.
+
+
+% \noindent\textbf{(3) Traversal Evaluator.}
+% The Evaluator produces the retrieval evaluation $e_t \in \{\textsc{Success},\textsc{Failure}\}$, which is a core part of the observation for the \textsc{Traverse} action.
+% Given the current target subquery $q_t$ and newly retrieved evidence $\mathcal{B}_k$, it assesses whether the evidence is sufficient and non-redundant for resolving $q_t$, 그리고 $\mathcal{Q}$의 unsolved subquery 중 풀 수 있는 것도 있는지.
+% $q_t$를 풀 수 있다면 \textsc{Success}를 반환한다.
+% 또한 \mathcal{Q} 중 풀 수 있는 subquery가 있다면, it extracts an answer $\alpha$ for the corresponding entry in $\mathcal{Q}_t$ 그리고 반환한다.
+% % This evaluation is recorded in the traversal record of $H_t$ and provides the feedback signal used by the Orchestrator to decide whether to continue traversal, invoke planning, or backtrack.
+
+
+% \noindent\textbf{(4) Orchestrator.}
+% The Orchestrator is an LLM-driven central controller that selects the next action using the memory $M_t$.
+% 각 decision iteration마다 어떠한 action을 취해야 할지 결정하며, 그 결정 과정에서 efficient하고 accurate한 retrieval을 하려고 한다.
+% 이를 위해 memory $M_t$를 효과적으로 사용하게 되는데, 이전의 실패를 feedback으로 사용하여 다음 action을 결정한다.
+
+% $\textsc{Traverse}$를 고를 때에는 $q_t$, $\tau_t$ and $\mathcal{D}_{anc}$ 를 함께 생성하게 되는데,
+% performs \emph{history-aware backtracking} by selecting a prior traversal record $h_\kappa \in H_t$ and executing $a_t=\textsc{Backtrack}(h_\kappa, q_t, \tau_t)$ to re-anchor the search and avoid repeated failures under the same context.
+% Backtracking은 여러 방면을 feedback할 수 있다.
+% \tau_t의 경우, 처음에 LLM을 최대한 사용하지 않는 식으로 traversal을 진행해 보고, 만약 실패하면 다시 더 thorough한 setting으로 돌릴 수 있어 efficient한 traversal을 가능하게 한다.
+% 또한, q_t의 경우 여러 candidate 중에서 몇 개를 골라 traversal을 진행하려고 하였는데 실패하였다면, 다른 candidate entity를 골라서 traversal을 시도해 볼 수 있어 effective하다.
+% 현재 frontier이 아닌 이전의 context에 맞는 h_\kappa를 찾아서 이전의 context에서 retrieval을 재개할 수도 있다..
+
+
+% $\textsc{Plan}(M_t)$ when a new plan is needed by appending new subqueries.
+% 맨 처음에 original query만으로 planning을 할 때와,
+% 최근의 consecutive한 traversal 시도가 계속 fail을 하게 될 때 새로운 subquery들을 추가하기 위한 용도로 call한다.
+
+% Finally, it triggers $\textsc{Stop}$ when $M_t$를 봤을 때 original query $Q$를 답변하기에 알맞다고 판단했을 때, 또는 .
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%% Version 1
+
+
+
+% \revised{
+
+% At a high level, \textsc{\OurFullName} (\textsc{\Ours}) is an iterative subgraph traversal algorithm on the layered component graph $G$
+% (Section~\ref{sec:lcg}). 
+% Starting from the original query $Q$, \textsc{\Ours} incrementally expands an evidence subgraph by repeatedly adding newly discovered nodes (documents/components), yielding an evolving set of retrieved components.
+
+% \Ours operates as a feedback-driven controller that alternates \emph{as needed} between two capabilities:
+% (i) \emph{adaptive graph traversal} to acquire new evidence and (ii) \emph{online replanning} to refine what information to seek next.
+% At each hop, the \emph{orchestrator} selects (a) a target subquery and (b) a traversal configuration---e.g., a global jump vs.\ a local
+% neighborhood expansion, with optional LLM reasoning and an appropriate retrieval granularity (document summaries vs.\ components vs.\ subcomponents).
+% It then invokes the \emph{multi-strategy traverser}, which executes the chosen hop on $G$ and returns ranked candidates and retrieved components.
+
+% All intermediate decisions and outcomes are written into a shared \emph{memory}: which subquery was attempted, which tool/parameters were used,
+% what evidence was retrieved, and whether the retrieved evidence resolves the target subquery according to the evaluator.
+% Crucially, unsuccessful attempts are not discarded. When a hop fails to answer the target subquery, the failure and its diagnosis are recorded as feedback, and become actionable signals for future routing.
+% This accumulated history enables \emph{history-aware backtracking}: rather than simply reverting state and repeating, \Ours re-focuses the search to a prior context and re-routes using alternative tools/strategies that explicitly avoid previously unproductive patterns, improving robustness in large, noisy open-domain graphs.
+% }
+
+% 크게 봤을 때 \textsc{\OurFullName} (\textsc{\Ours})는 layered component graph 상에서 진행되는 iterative subgraph traversal algorithm이며, 한 iteration마다 새로운 component set을 추가하는 식으로 진행된다.
+% \textsc{\OurFullName} (\textsc{\Ours}) is a feedback-driven controller for \emph{subgraph retrieval} on the layered component graph $G$
+% (Section~\ref{sec:lcg}).
+% Given the original query $Q$, \textsc{\Ours} incrementally discovers an evidence subgraph by 필요할 때마다 적절히 둘 중 하나를 고르며 (i) adaptive graph traversal and (ii) online replanning of the information need.
+% Concretely, at each hop the \textit{orchestrator} chooses \emph{what to pursue next} (a target subquery) and \emph{how to traverse} (e.g., global jumps vs.\ local neighborhood expansion, with optional LLM reasoning and adaptive retrieval granularity), 그리고 그에 대응되는 strategy로 multi-strategy traverser를 call한다.
+% Multi-strategy traverser는 현재 진행하고 있는 traversal 상에서 주어진 strategy로 새로이 hop을 진행하고, 이 결과로 얻어진 component들을 orchestrator에게 반환한다.
+% Orchestrator는 이제까지 traverse해온 과정(어떠한 subquery를 어떠한 parameter로 retrieval하여 어떠한 component를 얻었고, 이 component들이 target subquery를 대답할 수 있는지)을 모두 \emph{memory}에 적어 놓고, 이를 활용하여 다음 action을 정하게 된다.
+% A central principle is that dead ends are informative: when a hop fails to resolve the target subquery, the attempt is recorded 향후 이용될 수 있다.
+% This accumulated history enables \emph{history-aware backtracking}: rather than simply reverting state and repeating, \textsc{\Ours} re-focuses the search to a prior context and re-routes using alternative tools/strategies that explicitly avoid previously failed patterns, thereby improving resilience under noisy open-domain graphs.
+
+
+% Gemini
+% \textsc{\OurFullName} (\textsc{\Ours}) performs adaptive traversal on the layered component graph by coupling a \emph{tool-using agent} with \emph{history-aware backtracking}. 
+% Unlike rigid retrieval pipelines that execute a fixed sequence of steps, \textsc{\Ours} operates as a dynamic state machine controlled by an \textbf{Orchestrator}.
+% At each step, the Orchestrator analyzes the current search context to decide the optimal next move: it may (1) \emph{plan} or refine subqueries to decompose complex information needs, (2) \emph{traverse} the graph to gather evidence, or (3) \emph{backtrack} upon encountering a dead end.
+% Crucially, this process is not a simple loop but a feedback-driven cycle; unsuccessful attempts are not discarded but stored as explicit failure signals. 
+% These signals inform the Orchestrator to prune unproductive paths and adjust retrieval granularity or strategies in subsequent steps, effectively turning failure into constructive feedback for intelligent navigation.
+
+
+% \textsc{\OurFullName} (\Ours) performs adaptive traversal on the layered component graph by coupling a \emph{tool-using agent} with \emph{history-aware backtracking}. 
+% At a high level, \textsc{\Ours} iterates over (1) selecting what to solve next, (2) retrieving evidence via graph traversal, and (3) evaluating whether the evidence is sufficient.
+% % 위의 문장에서는 너무 workflow틱함. 뭔가 iteration이 너무 고정되어 있는 느낌. Retrieving 이외에도 subquery replanning이 일어날 수 있는데, 이 개념이 상실되었음.
+% Crucially, unsuccessful attempts are not discarded; they are stored as feedback that informs future routing decisions.
+
+% Modification Instructions:
+% Top-level에서 어떠한 것을 하는 알고리즘인지를 설명할 것.
+% 해당 알고리즘이 introduction에서 드러난 우리 아이디어랑 잘 매핑이 되어야 함.
+
+
+
+
+
+
+
+% \revised{
+% We cast \emph{subgraph retrieval} on the layered component graph as a finite-horizon sequential decision process.
+% We reuse the corpus notation in Section~\ref{sec:probdef} and the graph notation in Section~\ref{sec:lcg}.
+% Given a corpus $\mathcal{D}=\{D_j\}_{j=1}^{k_{doc}}$, global component pool $\mathcal{C}$, and link signal $\mathcal{L}$, the environment is a layered component graph $G=(\mathcal{V},\mathcal{E})$ whose nodes include document nodes ($V_0$), component nodes ($V_1$), and subcomponent nodes ($V_2$).
+% The agent cannot enumerate or fully observe $G$; it must interact with the corpus through restricted tool calls and incremental evidence gathering.
+
+% \noindent\textbf{Discovered evidence subgraph.}
+% Rather than scoring every $C\in\mathcal{C}$ in a single shot, \Ours incrementally constructs a discovered evidence subgraph
+% $G_t=(V_t,E_t)$, where $V_t\subseteq \mathcal{V}$ denotes the nodes discovered up to hop $t$ and $E_t\subseteq \mathcal{E}$ the induced edges.
+% We write $\mathcal{C}_t=\{C\in\mathcal{C}\mid v(C)\in V_t\}$ for the set of retrieved components accumulated so far, and $\mathcal{D}_t=\{D_j\in\mathcal{D}\mid v(D_j)\in V_t\}$ for the set of visited documents.
+
+% \noindent\textbf{Subqueries.}
+% We maintain a dynamic list of subqueries $\mathcal{Q}_t=[(q_i,z_i,\alpha_i)]_{i=1}^{m_t}$ derived from $Q$.
+% Each $q_i$ is associated with a status $z_i\in\{\textsc{unsolved},\textsc{solved}\}$ and (optionally) an extracted answer $\alpha_i$.
+% The planner may append to or rewrite $\mathcal{Q}_t$ based on accumulated evidence.
+
+% \paragraph{Information-state MDP with explicit observations.}
+% To model the step-by-step tool-mediated traversal, we define a finite-horizon sequential decision process in which the \emph{state}
+% is the agent's \emph{information state} (i.e., its current exploration context), while observations are the newly returned tool outputs
+% (including evaluator feedback).
+% Formally, we model the process as $\langle \mathcal{S},\mathcal{A},\mathcal{P},\mathcal{R},\mathcal{O}\rangle$ where
+% $s_t\in\mathcal{S}$ denotes the information state at hop $t$.
+
+% \noindent\textbf{State (exploration context).}
+% At hop $t$, the agent maintains an information state
+% \begin{equation}
+% s_t \;=\; \Big(G_t,\; A_t,\; F_t,\; \mathcal{Q}_t,\; M_t,\; B_t\Big).
+% \end{equation}
+% Here:
+% \squishlist
+%     \item \textit{Evidence:} $G_t=(V_t,E_t)$ is the discovered evidence subgraph (equivalently, $(\mathcal{D}_t,\mathcal{C}_t)$).
+%     \item \textit{Focus/anchors:} $A_t\subseteq V_t$ is the current set of \emph{anchor} nodes that local traversal expands from
+%     (e.g., the most recently accepted evidence nodes for a chosen subquery).
+%     \item \textit{Frontier:} $F_t$ is the current \emph{expansion frontier} (candidate nodes/edges to expand next), which makes
+%     local navigation and backtracking well-defined beyond simply knowing $V_t$.
+%     \item \textit{Subquery progress:} $\mathcal{Q}_t$ tracks decomposition and solved/unsolved status for the main query.
+%     \item \textit{Memory:} $M_t$ is a structured trajectory memory that records what was tried and what worked/failed (defined below),
+%     enabling strategy selection and intelligent backtracking.
+%     \item \textit{Budget:} $B_t$ summarizes the remaining budget (e.g., remaining hops/tool-call quota), which affects exploration vs.\ exploitation.
+% \squishend
+% This decomposition makes the ``state change per hop'' explicit: traversal primarily updates the evidence $G_t$, the focus/frontier $(A_t,F_t)$,
+% and the memory $M_t$.
+
+% \noindent\textbf{Observation.}
+% Each hop yields an observation $o_t\in\mathcal{O}$ consisting of \emph{newly returned tool outputs}:
+% \begin{equation}
+% o_t \;=\; \Big(\Delta V_t,\; \Delta E_t,\; X_t,\; e_t\Big),
+% \end{equation}
+% where $(\Delta V_t,\Delta E_t)$ are the newly retrieved nodes/edges, $X_t$ denotes their contents/summaries, and
+% $e_t$ is the \emph{traversal evaluator feedback} for this hop (e.g., \textsc{Success}/\textsc{Failure} plus a short rationale and/or
+% a next-step suggestion).
+% In our formulation, $o_t$ is essential not because we assume hidden environment dynamics, but because tool calls reveal information
+% incrementally and the evaluator produces actionable feedback that is written into memory and used for subsequent decisions.
+
+% \noindent\textbf{Action.}
+% An action $a_t\in\mathcal{A}$ is a structured tool call chosen by the orchestrator.
+% We consider three action families:
+% \begin{align}
+% a_t \in \Big\{
+% \textsc{Traverse}(q_t,\tau_t),\;
+% \textsc{Plan},\;
+% \textsc{Backtrack}(b_t)
+% \Big\},
+% \end{align}
+% where $q_t\in\mathcal{Q}_t$ is the selected target subquery,
+% $\tau_t$ specifies a traversal configuration (e.g., global vs.\ local hop, reasoning vs.\ non-reasoning, and retrieval granularity over Layer 0/1/2),
+% and $b_t$ is a pointer to a prior history record used to re-focus the traversal context.
+
+% \noindent\textbf{Transition.}
+% The transition kernel $\mathcal{P}$ updates the information state by incorporating the new observation:
+% \begin{equation}
+% s_{t+1} \;=\; \textsc{Update}(s_t, a_t, o_{t+1}).
+% \end{equation}
+% Concretely:
+% \squishlist
+%     \item For $\textsc{Traverse}(q_t,\tau_t)$, the agent performs a tool call and receives $o_{t+1}=(\Delta V_{t+1},\Delta E_{t+1},X_{t+1},e_{t+1})$.
+%     We update the evidence subgraph
+%     $(V_{t+1},E_{t+1}) \leftarrow (V_t,E_t)\cup(\Delta V_{t+1},\Delta E_{t+1})$,
+%     refresh the anchors/frontier $(A_{t+1},F_{t+1})$, and write evaluator feedback $e_{t+1}$ into memory $M_{t+1}$.
+%     \item For $\textsc{Plan}$, we update $\mathcal{Q}_t$ (append/rewrite) and possibly reset $(A_t,F_t)$ to reflect a new decomposition or focus.
+%     \item For $\textsc{Backtrack}(b_t)$, we restore a prior \emph{focus/frontier configuration} (and subquery focus) indicated by $b_t$,
+%     while \emph{preserving} the accumulated evidence $G_t$ and memory $M_t$; this allows re-planning without forgetting failed paths.
+% \squishend
+
+% \noindent\textbf{Reward.}
+% The reward $\mathcal{R}$ reflects retrieval utility under a budget.
+% Conceptually, the terminal utility depends on the final ranked list produced from $\mathcal{C}_T$ (e.g., recall@k),
+% while per-hop costs (e.g., tool calls) can be incorporated as penalties.
+
+% \paragraph{Memory as trajectory log under the problem formulation.}
+% To enable intelligent strategy switching and backtracking, memory must serve as more than a cache of visited nodes.
+% We define memory at hop $t$ as a structured tuple
+% \begin{equation}
+% M_t \;=\; (Q,\; \mathcal{Q}_t,\; H_t,\; \Phi_t),
+% \end{equation}
+% where $H_t=[h_1,\ldots,h_t]$ is an ordered traversal history and $\Phi_t$ is a compact \emph{failure/strategy summary} derived from $H_t$.
+
+% \noindent\textbf{Traversal history ($H_t$).}
+% Each step record $h_\tau$ stores:
+% \squishlist
+%     \item \textit{Target:} the subquery $q_\tau \in \mathcal{Q}_\tau$ addressed at step $\tau$.
+%     \item \textit{Strategy:} action parameters (e.g., Global/Local, targeted layer $V_0/V_1/V_2$, reasoning on/off, retrieval granularity).
+%     \item \textit{Outcome:} the retrieved nodes/components and the \textbf{Evaluator Feedback} $e_\tau$ (e.g., success/failure and rationale).
+% \squishend
+
+% \noindent\textbf{Failure/strategy summary ($\Phi_t$).}
+% While $H_t$ is a full trajectory log, $\Phi_t$ summarizes it into reusable signals for decision-making,
+% such as ``strategies already tried for each subquery,'' ``recent failure modes,'' and ``branches to avoid'' (e.g., repeated dead ends).
+% This makes backtracking \emph{informed}: the orchestrator can consult $\Phi_t$ to prune redundant search and to trigger strategy switches
+% (e.g., local navigation $\rightarrow$ global jump) when the evaluator repeatedly reports failures.
+
+% }
+
+
+
+
+
+
+% ChatGPT
+% \revised{
+
+% We cast \emph{subgraph retrieval} on the layered component graph as a finite-horizon sequential decision process.
+% We reuse the corpus notation in Section~\ref{sec:probdef} and the graph notation in Section~\ref{sec:lcg}.
+% Given a corpus $\mathcal{D}=\{D_j\}_{j=1}^{k_{doc}}$, global component pool $\mathcal{C}$, and link signal $\mathcal{L}$, the environment is the layered component graph $G=(V,E)$ whose nodes include document nodes ($V_0$), component nodes ($V_1$), and subcomponent nodes ($V_2$).
+
+% \noindent\textbf{Evidence subgraph.}
+% Rather than scoring every $C\in\mathcal{C}$ in a single shot, \Ours incrementally constructs a discovered evidence subgraph $G_t=(V_t,E_t)$, where $V_t\subseteq V$ denotes the nodes discovered up to hop $t$ and $E_t\subseteq E$ the induced edges.
+% We write $ \mathcal{C}_t=\{C\in\mathcal{C}\mid v(C)\in V_t\} $ for the set of retrieved components accumulated so far, and $ \mathcal{D}_t=\{D_j\in\mathcal{D}\mid v(D_j)\in V_t\} $ for the set of visited documents (via the document layer).
+
+% \noindent\textbf{Subqueries.}
+% We maintain a dynamic list of subqueries $\mathcal{Q}_t=[(q_i,z_i,\alpha_i)]_{i=1}^{m_t}$ derived from $Q$.
+% Each $q_i$ is associated with a status $z_i\in\{\textsc{unsolved},\textsc{solved}\}$ and (optionally) an answer $\alpha_i$.
+
+% \noindent\textbf{Sequential decision process.}
+% We model traversal as a partially observable sequential decision process
+% $\langle \mathcal{S},\mathcal{A},\mathcal{T},\mathcal{R},\mathcal{O}\rangle$:
+% \squishlist
+
+%     \item \textit{State} $s_t\in\mathcal{S}$ captures the underlying corpus graph $G$ together with the agent’s internal context,
+%     including the discovered subgraph $G_t$ and shared memory $M_t$ (Section~\ref{sec:datastruct}).
+%     The full corpus is too large to enumerate, so the agent acts through restricted observations and tool calls.
+    
+%     \item \textit{Observation} $o_t\in\mathcal{O}$ consists of the current memory $M_t$ plus tool outputs at hop $t$,
+%     i.e., newly retrieved nodes (documents/components/subcomponents) and their contents/summaries.
+    
+%     \item \textit{Action} $a_t\in\mathcal{A}$ is a structured tool call chosen by the orchestrator.
+%     We consider three action families:
+%     \begin{align}
+%         a_t \in \Big\{
+%         \textsc{Traverse}(q_t,\tau_t),\;
+%         \textsc{Plan},\;
+%         \textsc{Backtrack}(b_t)
+%         \Big\},
+%     \end{align}
+%     where $q_t\in\mathcal{Q}_t$ is the selected target subquery, $\tau_t$ specifies a traversal configuration/tool (e.g., global vs.\ local hop, reasoning vs.\ non-reasoning, and retrieval granularity over Layer 0/1/2), and $b_t$ is a pointer to a prior history record used to re-focus the traversal context.
+    
+%     \item \textit{Transition} $\mathcal{T}$ updates the discovered subgraph and memory.
+%     For a traversal action, we expand the subgraph and append evaluator feedback: $(V_{t+1},E_{t+1}) \leftarrow \textsc{Expand}(V_t,E_t,q_t,\tau_t)$, and the evaluator output is written into $M_{t+1}$.
+%     For $\textsc{Plan}$, we update the subquery list $\mathcal{Q}_t$ (append/rewrite) based on current evidence.
+%     For $\textsc{Backtrack}(b_t)$, we restore a prior traversal context (e.g., frontier/focus) indicated by $b_t$ and re-plan the next hop;
+%     importantly, we do not discard the accumulated history.
+    
+%     \item \textit{Reward} $\mathcal{R}$ reflects retrieval utility under a budget.
+%     Conceptually, the terminal utility depends on the final ranked list produced from $\mathcal{C}_T$ (e.g., recall@k),
+%     while per-hop costs (e.g., tool calls) can be incorporated as penalties.
+    
+% \squishend
+
+
+% \noindent\textbf{Memory}
+% To enable intelligent backtracking, the memory $M_t$ must serve as more than a simple storage of visited nodes; it must act as a \emph{trajectory log} that captures the reasoning behind each decision.
+% In open-domain graphs, a retriever often encounters "dead ends"—paths that seem promising initially but fail to yield relevant evidence.
+% Standard backtracking simply forgets these paths. 
+% In contrast, \textsc{\Ours} utilizes $M_t$ to persist the context of failed traversals. 
+% By analyzing \emph{which} strategies failed and \emph{why} (via evaluator feedback), the agent can prune redundant search branches and dynamically switch strategies (e.g., from local navigation to a global jump) to recover from failures.
+
+% At hop $t$, memory is defined as a tuple $M_t = (Q, \mathcal{Q}_t, H_t)$.
+
+% \noindent\textbf{Subquery list ($\mathcal{Q}_t$).}
+% This list tracks the decomposition of the main query. It is represented as $\mathcal{Q}_t=[(q_i, z_i, \alpha_i)]_{i=1}^{m_t}$, where $q_i$ is the natural language subquery, $z_i$ is its solution status, and $\alpha_i$ is the extracted answer. The planner dynamically appends to or modifies this list based on evidence found in $\mathcal{G}_t$.
+
+% \noindent\textbf{Traversal history ($H_t$).}
+% The history is an ordered sequence $H_t=[h_1,\ldots,h_t]$, recording the trajectory of the agent. Each step $h_\tau$ stores:
+% \squishlist
+%     \item \textit{Target:} The specific subquery $q_\tau \in \mathcal{Q}_\tau$ addressed at this step.
+%     \item \textit{Strategy:} The action parameters used, such as the traversal mode (Global/Local), the graph layer targeted ($V_0/V_1$), and whether LLM reasoning was employed.
+%     \item \textit{Outcome:} The set of nodes/components retrieved and, crucially, the \textbf{Evaluator Feedback} (Success/Failure).
+% \squishend
+% This structured log allows the Orchestrator to inspect $H_t$ and ask: "Have we already tried a vector search for this entity? If it failed, should we try following navigational links instead?"
+% }
+
+
+
+
+% \noindent\textbf{Output ranking.}
+% After $T$ hops (or upon termination), the retriever produces the final top-$n_{ret}$ list $\mathcal{R}=[\hat{C}_1,\ldots,\hat{C}_{n_{ret}}]$ by scoring/reranking components in $\mathcal{C}_T$.
+% The goal remains to place the ground-truth relevant set $\mathcal{C}_{gt}(Q)$ into $\mathcal{R}$ at high ranks.
+% Within this formulation, a \emph{failure} at hop $t$ (i.e., retrieved evidence does not resolve $q_t$) becomes an explicit feedback signal stored in memory and exploited by \Ours to guide subsequent decisions.
+
+
+
+
+
+
+
+
+
+% Gemini
+% We cast \emph{subgraph retrieval} on the layered component graph as a \emph{sequential decision process}.
+% This perspective allows the agent to iteratively expand its view of the corpus based on intermediate observations.
+
+% \noindent\textbf{Evidence subgraph.}
+% Let $\mathcal{G}=(\mathcal{V},\mathcal{E})$ be the layered component graph defined in Section~\ref{sec:lcg}, where $\mathcal{V} = V_0 \cup V_1 \cup V_2$.
+% Rather than scoring every node in a single shot, we incrementally construct an evidence subgraph $\mathcal{G}_t=(\mathcal{V}_t,\mathcal{E}_t)$, where $\mathcal{V}_t \subseteq \mathcal{V}$ denotes the set of nodes (documents, components, subcomponents) discovered up to step $t$.
+% Let $\mathcal{C}_t = \{x(v) \mid v \in \mathcal{V}_t \cap (V_1 \cup V_2)\}$ denote the set of raw multimodal content accumulated so far.
+
+% \noindent\textbf{Subqueries.}
+% We maintain a dynamic list of subqueries $\mathcal{Q}_t=[q_1,\ldots,q_{m_t}]$ derived from the original query $Q$.
+% Each subquery $q_i$ is associated with a status $z_i\in\{\textsc{unsolved},\textsc{solved}\}$ and, if solved, an answer $\alpha_i$.
+
+% \noindent\textbf{Sequential decision process.}
+% We model the traversal as a finite-horizon partially observable sequential decision process $\langle \mathcal{S},\mathcal{A},\mathcal{T},\mathcal{R},\mathcal{O} \rangle$:
+% \squishlist
+%     \item \textit{State} $s_t\in\mathcal{S}$ captures the agent's internal context, including the discovered subgraph $\mathcal{G}_t$, the current subquery list $\mathcal{Q}_t$, and the traversal history. The full corpus graph $\mathcal{G}$ is latent and not fully observable.
+    
+%     \item \textit{Observation} $o_t\in\mathcal{O}$ consists of the agent's memory plus the outputs from the tool executed at step $t$ (e.g., a set of newly retrieved nodes $\{v\}$ and their content $\{x(v)\}$).
+    
+%     \item \textit{Action} $a_t\in\mathcal{A}$ is a structured decision $a_t = (\tau, \text{params})$. The tool $\tau$ is selected from a set of available functions (Traverser, Planner, Evaluator), and $\text{params}$ specifies arguments such as the target subquery $q \in \mathcal{Q}_t$ or the traversal mode. We also define a special $\textsc{Backtrack}$ action that resets the traversal focus to a prior state in history while retaining failure information.
+    
+%     \item \textit{Transition} $\mathcal{T}$ updates the discovered subgraph and memory based on the action's result: $(\mathcal{V}_{t+1}, \mathcal{E}_{t+1}) \leftarrow \textsc{Expand}(\mathcal{V}_t, a_t)$. If the action was a traversal, new nodes are added; if it was a planning step, $\mathcal{Q}_t$ is updated.
+    
+%     \item \textit{Reward} $\mathcal{R}$ reflects the utility of the retrieved evidence. While the terminal reward is the retrieval quality (e.g., Recall@$K$) of the final set $\mathcal{C}_T$, we utilize intermediate feedback from the Evaluator (success/failure) as dense reward signals to guide the Orchestrator.
+% \squishend
+
+% \noindent\textbf{Output ranking.}
+% After $T$ steps, the system produces a final ranked list $\mathcal{R}=[\hat{C}_1,\ldots,\hat{C}_{n_{ret}}]$ by scoring the components in $\mathcal{C}_T$.
+% The objective is to maximize the rank of ground-truth components $\mathcal{C}_{gt}(Q)$ within $\mathcal{R}$ by leveraging the feedback-loop to correct navigational errors during the process.
+
+
+
+
+
+
+% \subsection{Problem Formulation}
+% \label{sec:probform}
+
+
+
+% We cast \emph{subgraph retrieval} on the layered component graph as a \emph{sequential decision process}.
+% This perspective is common in agentic settings where an agent iteratively chooses an action (e.g., tool call or hop),
+% observes the environment response, and updates its internal memory.
+
+
+% \noindent\textbf{Evidence subgraph.}
+% Let $\mathcal{G}=(\mathcal{V},\mathcal{E})$ be the layered component graph.
+% Rather than scoring every $C\in\mathcal{C}$ in a single shot, we incrementally construct an evidence subgraph
+% $\mathcal{G}_t=(\mathcal{V}_t,\mathcal{E}_t)$, where $\mathcal{V}_t\subseteq \mathcal{V}$ denotes the nodes discovered up to step $t$.
+% Let $\mathcal{C}_t = \{C\in\mathcal{C}\mid v(C)\in\mathcal{V}_t\}$ denote the set of retrieved components accumulated so far.
+
+
+% \noindent\textbf{Subqueries.}
+% We maintain a dynamic list of subqueries $\mathcal{Q}_t=[q_1,\ldots,q_{m_t}]$ derived from the original query $Q$.
+% Each subquery $q_i$ is associated with a status $z_i\in\{\textsc{unsolved},\textsc{solved}\}$ and (optionally) an answer $\alpha_i$.
+
+
+% \noindent\textbf{Sequential decision process.}
+% We model the traversal as a finite-horizon partially observable sequential decision process
+% $\langle \mathcal{S},\mathcal{A},\mathcal{T},\mathcal{R},\mathcal{O} \rangle$:
+% \squishlist
+%     \item \textit{State} $s_t\in\mathcal{S}$ captures the underlying corpus graph and the agent's current internal context
+%     (e.g., discovered subgraph and memory). The full corpus is too large to enumerate at each step, so the agent operates
+%     through restricted observations and tool calls.
+%     \item \textit{Observation} $o_t\in\mathcal{O}$ consists of the agent's memory plus the tool outputs at step $t$,
+%     i.e., the newly retrieved nodes/components and their contents/summaries.
+%     \item \textit{Action} $a_t\in\mathcal{A}$ is a structured decision
+%     $a_t = (q_t, \tau_t)$ where $q_t\in\mathcal{Q}_t$ is the chosen subquery and $\tau_t$ specifies how to expand:
+%     a traversal strategy/tool with parameters (e.g., global jump vs.\ local hop, vector-only vs.\ LLM-assisted selection,
+%     and retrieval granularity). We also allow a special \textsc{backtrack} action that re-focuses the traversal to a prior
+%     context in the history.
+%     \item \textit{Transition} $\mathcal{T}$ updates the discovered subgraph and memory:
+%     $(\mathcal{V}_{t+1},\mathcal{E}_{t+1}) \leftarrow \textsc{Expand}(\mathcal{V}_{t},\mathcal{E}_{t}, a_t)$, and
+%     the evaluator feedback is appended to memory.
+%     \item \textit{Reward} $\mathcal{R}$ reflects retrieval utility under a budget.
+%     Conceptually, the terminal utility depends on the final ranked list produced from $\mathcal{C}_T$ (e.g., recall@k),
+%     while per-step costs (e.g., tool calls) can be incorporated as penalties.
+% \squishend
+
+
+% \noindent\textbf{Output ranking.}
+% After $T$ steps (or upon termination), the retriever produces the final top-$n_{ret}$ list
+% $\mathcal{R}=[\hat{C}_1,\ldots,\hat{C}_{n_{ret}}]$ by scoring/reranking components in $\mathcal{C}_T$.
+% The goal remains to place the ground-truth relevant set $\mathcal{C}_{gt}(Q)$ into $\mathcal{R}$ at high ranks.
+% Within this formulation, a \emph{failure} at step $t$ (i.e., retrieved evidence does not resolve $q_t$)
+% becomes an explicit feedback signal stored in memory and exploited by \textsc{FiF} to guide subsequent decisions.
+
+
+
+% Modification Instructions:
+% Preliminaries에서 정의한 개념들이 사용될 수 있으면 사용될 수 있도록 notation 변경.
+% 이것이 뒤의 Tool list와 잘 이어질 수 있게끔 구성
+
+
+
+
+% \subsection{Memory}
+% \label{sec:datastruct}
+
+% <HERE> 
+
+% At hop $t$, memory is a tuple
+% $
+% M_t = (Q, \mathcal{Q}_t, H_t),
+% $
+% where $Q$ is the original query, $\mathcal{Q}_t$ is the current subquery list, and $H_t$ is the traversal history.
+
+% \noindent\textbf{Subquery list.}
+% We represent the subquery list as $\mathcal{Q}_t=[(q_i, z_i, \alpha_i)]_{i=1}^{m_t}$, where:
+% \squishlist
+%     \item $q_i$ is a natural-language subquery.
+%     \item $z_i\in\{\textsc{unsolved},\textsc{solved}\}$ indicates whether the subquery is currently answerable.
+%     \item $\alpha_i$ stores an answer string when $z_i=\textsc{solved}$, and is empty otherwise.
+% \squishend
+
+% \noindent\textbf{Traversal history.}
+% The history is an ordered list $H_t=[h_1,\ldots,h_t]$, where each step record $h_\tau$ stores:
+% \squishlist
+%     \item \textit{Which subquery was attempted:} an index or pointer to $q_\tau\in\mathcal{Q}_\tau$.
+%     \item \textit{Which traversal strategy/tool was used:} the selected mode (e.g., global/local hop; LLM-assisted or not; granularity).
+%     \item \textit{What was retrieved:} the ranked candidate documents and the ranked retrieved components at that step.
+%     \item \textit{Evaluator feedback:} whether the retrieval resolved the subquery, plus the produced answer/evidence when available.
+% \squishend
+% This structured log is the key substrate for history-aware backtracking: the orchestrator conditions future actions on
+% the accumulated successes/failures contained in $H_t$.
+
+% Instructions: 
+% <HERE>에 메모리의 역할을 제시 (Introduction에서 주장한 점들과 매치될 수 있게끔 설정)
+
+
+
+
+
+
+
+
+
+% \subsection{Tool List}
+% \label{sec:tools}
+
+% \textsc{FiF} is implemented as a tool-using agent. 
+% Each tool reads the shared memory and (optionally) updates it.
+
+% \noindent\textbf{(1) Multi-strategy Traverser.}
+% Given a target subquery $q_t$ and memory $M_t$, the traverser executes one hop of retrieval on $\mathcal{G}$ and returns
+% ranked candidates. We support multiple traversal strategies along three axes:
+% \squishlist
+%     \item \textit{Global vs.\ local hop.}
+%     A \emph{global hop} performs a corpus-wide jump (e.g., dense vector search over document summaries or components),
+%     while a \emph{local hop} restricts exploration to the neighborhood induced by $\mathcal{N}(\cdot)$ around recently visited nodes.
+%     \item \textit{LLM reasoning vs.\ non-reasoning.}
+%     In non-reasoning mode, candidates are selected purely by similarity scores;
+%     in reasoning mode, an LLM can re-rank or select candidates based on hop-specific semantics and the current context in memory.
+%     \item \textit{Granularity of vector search.}
+%     Depending on the hop, the traverser can retrieve at different granularities (document summaries, top-level components,
+%     or finer subcomponents) to balance recall and precision.
+% \squishend
+
+% \noindent\textbf{(2) Subquery Planner.}
+% The planner inspects $M_t$, especially the current subquery list and their partial answers, and proposes new subqueries to append to
+% $\mathcal{Q}_t$ (or rewrites existing ones). This allows the agent to surface missing constraints or decompositions as evidence accumulates.
+
+% \noindent\textbf{(3) Traversal Evaluator.}
+% Given the current subquery $q_t$ and the retrieved components from the traverser, the evaluator decides whether $q_t$ is answerable.
+% If answerable, it produces an answer and supporting evidence; otherwise, it produces a failure signal.
+% It also updates $(z_t,\alpha_t)$ in the subquery list accordingly.
+
+% \noindent\textbf{(4) Orchestrator.}
+% The orchestrator is the controller that selects the next action based on the integrated search history in $M_t$.
+% In addition to choosing which subquery to attempt and which traversal strategy to invoke, it performs \emph{history-aware backtracking}:
+% when repeated failures indicate a dead end, the orchestrator selects a backtracking target in the history and re-plans a new hop
+% that avoids previously unproductive patterns (rather than simply reverting state and repeating).
+
+
+% Instructions: 
+% 이전 파트 중 Problem Formulation에서 사용한 notation들과 매치될 수 있게끔, 매핑될 수 있게끔 서술.
+
+
+
+
+
+
+
+
+
+
+
+
+% \subsection{\textsc{\Ours}'s Agent Tool List}
+% \label{sec:tools}
+
+
+
+% \textsc{FiF} implements the action space $\mathcal{A}$ through a set of specialized tools. The Orchestrator invokes these tools to interact with the graph $\mathcal{G}$ and update memory $M_t$.
+
+% <Instructions>
+% 위의 problem definition 상에서 이 agent들이 어떠한 역할을 맡고 있는지 설명하면서, 설명을 전반적으로 매핑
+% 그리고 각 agent 별로 구체적으로 어떻게 작동하는지 추가
+
+% \noindent\textbf{(1) Multi-strategy Traverser.}
+
+% This tool executes the retrieval actions to expand the evidence subgraph. Given a target subquery $q_t$, it selects candidate nodes from $\mathcal{G}$ using one of three strategies:
+
+% \squishlist
+
+%     \item \textit{Global vs.\ Local Hop:} 
+%     A \emph{Global Hop} targets the Document Layer ($V_0$), using dense vector search over document summaries to identify new entry points in the corpus. 
+%     A \emph{Local Hop} traverses the Navigation Edges ($E_{nav}$) starting from the current node set $\mathcal{V}_t$, following hyperlinks or citations to finding connected evidence.
+    
+%     \item \textit{LLM-Reasoning vs.\ Vector-Similarity:} 
+%     In \emph{Vector mode}, candidates are selected purely by embedding similarity $s(q_t, x(v))$. 
+%     In \emph{Reasoning mode}, an LLM reranks the candidates in the neighborhood $\mathcal{N}(\cdot)$, utilizing the rich context of edges to select the most semantically promising path.
+    
+%     \item \textit{Granularity Selection:} 
+%     The traverser can target specific layers. It may retrieve coarse summaries ($V_0$) for high-level filtering or drill down to fine-grained subcomponents ($V_2$) for precise evidence extraction via $E_{\downarrow}$.
+    
+% \squishend
+
+% <Instructions> 
+% - 위의 problem formulation 중 어떤 일을 담당하는지 추가
+% - strategy가 \tau에 대응되는 개념이라는 것을 설명
+
+
+
+% \noindent\textbf{(2) Subquery Planner.}
+% This tool updates the subquery list $\mathcal{Q}_t$ to reflect the evolving information need. 
+% By inspecting the retrieved evidence in $\mathcal{C}_t$ and the partial answers in $\mathcal{Q}_t$, the planner generates new subqueries for missing information or refines existing ones that were too vague (and thus caused retrieval failures).
+
+% <Instructions> 
+% - 위의 problem formulation 중 어떤 일을 담당하는지 추가
+% - strategy가 $\tau$에 대응되는 개념이라는 것을 설명
+
+
+% \noindent\textbf{(3) Traversal Evaluator.}
+% Serving as the critic, the Evaluator examines the retrieved components $\mathcal{C}_{new}$ against the current subquery $q_t$. It determines if the evidence is sufficient to answer $q_t$.
+% If successful, it extracts the answer $\alpha_t$ and updates status $z_t \leftarrow \textsc{solved}$. 
+% If the evidence is irrelevant, it emits a \textbf{Failure} signal, which is recorded in $H_t$ to trigger the backtracking logic.
+% % 무엇을 바탕으로 evaluation을 하는지, 
+
+
+% \noindent\textbf{(4) Orchestrator.}
+% The Orchestrator is the central controller (policy) that selects the next action $a_{t+1}$ based on the full memory $M_t$.
+% It is responsible for \emph{History-Aware Backtracking}: instead of blindly reverting to the previous state upon receiving a failure signal, the Orchestrator analyzes $H_t$ to identify the cause of the dead end. It then selects a backtracking target (a previous valid state) and re-plans a distinct traversal strategy (e.g., switching from a local hop to a global query) to avoid repeating the unproductive pattern.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%% Version 0 (Plan)
+
+
+
+
+% Overview
+
+
+% Explanation about the overall traversal algorithm.
+% 우리가 하는 전반적인 traversal을 소개한다.
+
+% 그리고, 해당 알고리즘에서 맡는 것을 하는 바를 밑의 tool들에 대응시킨다. 
+% - Orchestrator
+% - Tool list
+%     - Multi-strategy traverser
+%         * Global/local hop
+%         * LLM reasoning or not
+%         * granularity of vector search
+%     - Subquery planner
+%     - Traversal Evaluator
+
+% Memory에서 무엇을 저장하는지 설명
+
+% \noindent\textbf{Agent loop.}
+% Given the original query $Q$, \textsc{FiF} maintains a shared memory $M$ and repeatedly executes the following loop
+% until a stop condition is met (e.g., all subqueries solved or a hop budget reached):
+% \squishlist
+%     \item \textit{Orchestrator} reads $M$ and chooses the next action, including the target subquery and a traversal strategy
+%     (and, when needed, a backtracking target).
+%     \item \textit{Multi-strategy Traverser} executes the chosen traversal action on $\mathcal{G}$ and returns a small set of
+%     candidate documents/components, effectively expanding the observed evidence subgraph.
+%     \item \textit{Traversal Evaluator} checks whether the retrieved components can resolve the current subquery; if yes, it produces
+%     an answer and marks it solved, otherwise it emits a failure signal.
+%     \item \textit{Subquery Planner} updates the subquery list based on the current memory (e.g., adding missing subqueries or refining existing ones).
+% \squishend
+% The final retrieval output is obtained by aggregating and reranking all components accumulated throughout the traversal.
+
+% \noindent\textbf{What memory stores.}
+% Memory $M$ persists (i) the original query, (ii) the evolving subquery list with answer/status, and (iii) a step-by-step traversal history
+% recording tool choices, retrieved items, and evaluator feedback. This enables \textsc{FiF} to backtrack intelligently and avoid repeating
+% previously failed patterns.
+
+
+
+
+% Problem Formulation
+
+% `sns.zip`에서의 traversal process를 어떤 식으로 formalization할 수 있는지 서술.
+
+
+
+% (1) Memory
+% `sns.zip`에서 `retriever_wellplan/data_structure/memory.py` 참고
+% - Original query
+% - subquery list
+%   * Subquery
+%   * Answer (Not solved / answer)
+% - traversal history
+%   * 어떠한 subquery를 풀었는가
+%   * 어떠한 strategy의 traversal tool을 썼는가 
+%   * 어떠한 document와 component를 retrieve하였는가
+%   * Retrieval 결과가 subquery를 해결하는지
+% (time_usage, api_usage, llm_call_num은 무시할 것)
+
+
+% (1) Multi-strategy Traverser
+% * 어떤 strategy가 있는지 구체적으로 설명
+%     * Global/local hop
+%     * LLM reasoning or not
+%     * granularity of vector search
+
+% (2) Subquery Planner
+% - Memory를 보고, subquery list에 들어갈 새로운 subquery들을 생성
+
+% (3) Traversal Evaluator
+% - 현재 subquery와, multi-strategy traverser가 retrieve해 온 component를 바탕으로 subquery를 풀 수 있는지 판단하고, 답변까지 생성.
+% 기존 subquery-list에 대한 답변 또한 업데이트
+
+% (4) Orchestrator
+% * 어떤 식으로 history-aware backtracking을 하는지 설명
+
+

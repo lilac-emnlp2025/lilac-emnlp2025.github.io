@@ -1,0 +1,210 @@
+\begin{abstract}
+
+
+
+
+
+
+% OMDR
+Open-domain multimodal document retrieval aims to retrieve specific components (paragraphs, tables, or images) from large and interconnected document corpora.
+% 기존 문제
+Existing graph-based retrieval approaches typically rely on a uniform similarity metric that overlooks hop-specific semantics, and their rigid pre-defined plans hinder dynamic error correction.
+These limitations suggest that a retriever should adapt its reasoning to the evolving context and recover intelligently from dead ends.
+% 우리 방법에 대한 설명
+To address these needs, we propose \textsc{Failure is Feedback} (\textsc{FiF}), which casts subgraph retrieval as a \textit{sequential decision process} and introduces two key innovations.
+% (i) We introduce a \textit{history-aware backtracking mechanism} that leverages failure traces to re-anchor and select alternative paths, rather than simply reverting the state.
+(i) We introduce a \textit{history-aware backtracking mechanism}; unlike standard backtracking that simply reverts the state, our approach piggybacks on the context of failed traversals, leveraging insights from previous failures. % to inform and optimize the selection of alternative paths.
+% (ii) We implement an \textit{economically-rational agentic workflow} with cost-aware strategy escalation: the orchestrator starts with a conservatively-estimated lightweight traversal and escalates to intensive LLM-based reasoning only when a hop is difficult or a prior attempt fails.
+(ii) We implement an \textit{economically-rational agentic workflow}. 
+Unlike conventional agents with static strategies, our orchestrator employs a cost-aware traversal method to dynamically manage the trade-off between retrieval accuracy and inference costs, escalating to intensive LLM-based reasoning only when the prior failure justifies the additional computational investment.
+% 우리의 우수성
+Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval on the benchmarks of \textsc{MultimodalQA}, \textsc{MMCoQA} and \textsc{WebQA}.
+
+
+
+
+\end{abstract}
+\vspace{-2em}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%% Version 3
+
+
+% % ChatGPT
+
+% OMDR
+% Open-domain multimodal document retrieval aims to retrieve specific components (paragraphs, tables, or images) from a large document corpus where information is distributed across interconnected documents.
+% % 기존 문제
+% % While existing graph-based approaches facilitate multi-hop reasoning, they primarily rely on shallow embedding similarity as a uniform strategy, ignoring that different hops require distinct reasoning operations to capture semantic nuances.
+% % Furthermore, it adheres to a rigid search plan defined prior to retrieval, limiting its ability to dynamically revise subgoals or correct errors based on intermediate results.
+% Existing graph-based approach primarily relies on a uniform similarity metric that overlooks hop-specific semantics, while their rigid pre-defined plans prevent dynamic error correction.
+% These limitations suggest that a retriever should (i) adaptively select the appropriate reasoning operation for each hop conditioned on the evolving search context and (ii) be able to backtrack and try alternative strategies when the current path proves unpromising.
+% % 우리 방법에 대한 설명
+% To address these needs, we propose \Ours, which builds on the existing graph structure and introduces two key ideas.
+% (i) We cast subgraph retrieval as a \textit{sequential decision process} that supports backtracking, where each step determines the specific strategy for the next move based on the current search context.
+% (ii) We introduce an \textit{agentic workflow} that enables this backtracking traversal; it consists of a \textit{tool list} covering diverse reasoning strategies, along with an \textit{orchestrator} that assigns the most effective tool to each hop.
+% % 우리의 우수성
+% Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval on the benchmarks of \textsc{MultimodalQA}, \textsc{MMCoQA} and \textsc{WebQA}.
+
+
+
+% Gemini
+
+% % OMDR
+% Open-domain multimodal document retrieval aims to retrieve specific components, such as paragraphs or images, from a large corpus where information is distributed across interconnected documents.
+% % 기존 문제
+% While existing graph-based approaches facilitate multi-hop reasoning, they primarily rely on shallow embedding similarity for traversal, sometimes failing to capture the semantic nuance of why the components are connected.
+% Furthermore, most methods adhere to a rigid search plan defined prior to retrieval, limiting their ability to dynamically revise subgoals or correct errors based on intermediate results.
+% % 우리 방법에 대한 설명
+% To address these limitations, we propose \Ours, which builds on the existing graph structure and introduces two key ideas.
+% First, to overcome the rigidity of fixed plans, we cast subgraph retrieval as a \textit{sequential decision process with backtracking}, allowing the model to dynamically revise its path based on the search context.
+% Second, to go beyond shallow similarity, we introduce an \textit{orchestrator} equipped with a diverse \textit{tool list}; this agent selectively invokes specific reasoning operations to interpret relationships deeply, rather than relying solely on embedding scores.
+% % 우리의 우수성
+% Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval on all three benchmarks.
+
+
+
+
+% \jhyun{
+% % 풀고 있는 문제
+% Open-domain multimodal document retrieval aims to return a small ranked set of query-relevant components (e.g., text, tables, images) from a large corpus, where the target components may be distributed across multiple components.
+% % 기존 방법의 문제
+% Although prior methods leverage structural or link information (e.g., graph-based traversal), they typically expand candidates with fixed, similarity-driven rules, which limits their ability to interpret relations and adapt the search strategy as new context emerges.
+
+% % OMDR: ChatGPT
+% Prior work often frames this setting as graph-based multi-hop retrieval, expanding from initially relevant components to connected ones.
+% % 기존 문제: ChatGPT
+% In practice, most systems rely on simple similarity-driven heuristics to choose which links to follow, which can miss the intent behind a relation and amplify early errors. 
+% Moreover, their search plans and scoring rules are largely static—typically set by a one-shot query decomposition—so the retriever has limited ability to adapt, revise subgoals, or recover when the search goes off track.
+% OMDR
+% Open-domain multimodal document retrieval aims to retrieve specific components, such as paragraphs or images, from a large corpus where information is distributed across interconnected documents.
+% % 기존 문제
+% While an existing graph-based approach facilitates multi-hop reasoning, it primarily relies on shallow embedding similarity for traversal, sometimes failing to capture the semantic nuance of why the components are connected. 
+% Furthermore, it adheres to a rigid search plan defined prior to retrieval, limiting its ability to dynamically revise subgoals or correct errors based on intermediate results.
+% % 우리 방법에 대한 설명
+% To address these limitations, we propose \Ours, which builds on the existing graph structure and introduces two key ideas.
+% First, we cast subgraph retrieval as \textit{backtracking traversal} and model it as a sequential decision process, where each step selects the next traversal action based on the current search context.
+% Second, we introduce a \textit{tool list} that specifies operations of various strategies, together with an \textit{orchestrator} that chooses and invokes these tools during traversal in a backtracking manner.
+% % 우리의 우수성
+% Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval on three all three benchmarks.
+% }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%% Version 2
+
+
+% % 무슨 문제를 푸는지 간단하게 설명은 해야 할 거잖아
+% Open-domain multimodal document retrieval aims to return a small ranked set of query-relevant components (paragraphs, tables, and images) from a large collection of multimodal documents.
+% Each document is composed of multiple components that jointly convey a single idea, and some components include hyperlinks that lead to other related documents.
+% %, making the supporting information for a query potentially distributed across multiple linked documents.
+% % 기존 방법의 문제점
+% Prior work on this task typically represents this setting as a graph, where each component is a node and edges encode relations such as within-document structure/co-occurrence or cross-document hyperlink connections.
+% While this structure-aware view supports multi-hop retrieval, most traversal pipelines still resolve relationships in a shallow manner: edge expansion is driven primarily by embedding similarity scores, which may fail to interpret what a specific connection implies for the query.
+% In addition, many methods follow a single fixed traversal plan with fixed scoring rules— guided by subqueries decomposed once before traversal—so the retriever has limited ability to revise subgoals, retry with stronger reasoning.
+% % 우리 방법의 우수성
+% To address these limitations, we propose \Ours, which builds on the existing graph structure and introduces two key ideas.
+% First, we cast subgraph retrieval as \textit{backtracking traversal} and model it as a sequential decision process, where each step selects the next traversal action based on the current search context.
+% Second, we introduce a \textit{tool list} that specifies operations of various strategies, together with an \textit{orchestrator} that chooses and invokes these tools during traversal in a backtracking manner.
+% % 우리의 우수성
+% Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval on three all three benchmarks.
+
+
+% \jhyun{
+% % 무슨 문제를 푸는지 간단하게 설명은 해야 할 거잖아
+% Open-domain multimodal document retrieval aims to return a small ranked set of query-relevant components (paragraphs, tables, and images) from a large collection of multimodal documents.
+% Each document is composed of multiple components that jointly convey a single idea, and some components include hyperlinks that lead to other related documents.
+% %, making the supporting information for a query potentially distributed across multiple linked documents.
+% % 기존 방법의 문제점
+% Prior work on this task typically represents this setting as a graph, where each component is a node and edges encode relations such as within-document structure/co-occurrence or cross-document hyperlink connections.
+% While this structure-aware view supports multi-hop retrieval, most traversal pipelines still resolve relationships in a shallow manner: edge expansion is driven primarily by embedding similarity scores, which may fail to interpret what a specific connection implies for the query.
+% In addition, many methods follow a single fixed traversal plan with fixed scoring rules— guided by subqueries decomposed once before traversal—so the retriever has limited ability to revise subgoals, retry with stronger reasoning.
+% %, or switch traversal behaviors when early steps are ambiguous or incorrect~\cite{9_ircot, 10_selfrag}.
+% % Prior work on this task typically represents this setting as a graph structure, where each component is a node and edges encode relations such as within-document co-occurrence or hyperlink connections.
+% % However, its graph traversal rely primarily on vector-similarity scores to expand to nearby nodes, which often leads to myopic, locally-biased exploration for multi-hop evidence; moreover, edge types and their weights are usually fixed and query-agnostic, so the traversal policy cannot adaptively interpret which connections matter for a given query.
+% % -> (TODO: 위의 기존 방법의 문제점 부분을 다음의 내용을 바탕으로 concise하게 정리. 또한 뒤의 "우리 방법의 우수성"과도 논리적으로 말끔하게 이어지게끔) """This structure-aware view supports multihop retrieval, but current traversal pipelines still resolve relationships in a shallow manner. Edge-based traversal is driven primarily by embedding similarity, which may not interpret what a specific link implies for the query. It also traverses using a single fixed plan and fixed scoring rules, driven by decomposed subqueries generated once before the traversal. 
+% % As a result, the retriever has limited ability to revise subgoals, retry with stronger reasoning, or switch traversal strategies when early steps are ambiguous or wrong~\cite{9_ircot, 10_selfrag}."""
+% % 우리 방법의 우수성
+% To address these limitations, we propose \Ours, which builds on the existing graph structure and introduces two key ideas.
+% First, we cast subgraph retrieval as \textit{backtracking traversal} and model it as a sequential decision process, where each step selects the next traversal action based on the current search context.
+% Second, we introduce a \textit{tool list} that specifies operations of various strategies, together with an \textit{orchestrator} that chooses and invokes these tools during traversal in a backtracking manner.
+% % To solve these problems, we propose \Ours that extends existing graph structure, but applies two new ideas.
+% % First, we formulate a subgraph retrieval problem as \textit{backtracking beam-search traversal}, which is further modeled as a sequential decision process.
+% % Second, 다양한 specification에 대해 traversal이 가능한 \textit{tool list}와, 해당 tool list를 바탕으로 traversal을 진행하는 \textit{orchestrator}를 제시한다. 
+% % 우리의 우수성
+% Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval on three all three benchmarks.
+% }
+
+
+
+
+
+%%%% Version 1
+
+% Open-domain multimodal document retrieval is a key primitive for multimodal retrieval-augmented generation, where evidence is scattered across paragraphs, tables, and images connected by weak navigational links.
+
+% Existing single-index retrievers suffer from lossy modality conversion and fixed retrieval units, while structure-aware traversal often follows a rigid similarity-driven policy that cannot recover from early mistakes.
+
+% To address such problems, we present \textsc{\Ours}, a component retriever that frames retrieval as a sequential decision process over a linked, layered multimodal component graph.
+
+% \textsc{\Ours} equips a traversal agent with a strategy bank that adapts traversal scope, retrieval granularity, and reasoning effort, mixing local expansion with global jumps when the graph provides insufficient cues.
+
+% To control cost, a progressive orchestrator schedules strategies from cheap to expensive, checks whether each intermediate subgoal is satisfied, and triggers retries or evidence-conditioned replanning when needed.
+
+% Experiments on \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA} show that \textsc{\Ours} achieves the state-of-the-art performances both retrieval accuracy and end-to-end multimodal QA while requiring a reasonable number of LLM calls.
+
+
+% \jhyun{
+% % 무슨 문제를 푸는지 간단하게 설명은 해야 할 거잖아
+% Open-domain multimodal document retrieval task requires retrieving a small ranked set of query-relevant components (paragraphs, tables, and images) from a collection of multimodal documents.
+% 하나의 document 내에는 여러 component가 존재하여 하나의 아이디어를 표현하고, hyperlink 한 component와 관련된 document를 가리킨다.
+
+% % 기존 방법의 문제점
+% 기존의 방법은 graph structure를 통해 component를 node로, 그들 간의 연관 관계를 edge로 나타낸다.
+% 하지만 traversal 과정이 vector embedding에만 의존하여 고급 reasoning이 불가하고, 매우 static하여 각 edge 간의 의미를 ~~~ (채워넣기).
+
+% % 우리 방법의 우수성
+% 1) Multi-modal layered component graph 라는 효과적인 구조를 유지 및 extend하면서, 
+% 2) 해당 graph 상에서의 retrieval task를 backtracking beam search traversal로 표현한 후 sequential action decision으로 formulation하고, 
+% 3) 각 action에 대한 tool agent 및 traversal을 관장하는 orchestrator를 설정하여 effective한 retrieval을 가능케 한다.
+
+% % 우리의 우수성
+% Experiments on \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA} show that \textsc{\Ours} achieves the state-of-the-art performances both retrieval accuracy and end-to-end QA accuracy.
+% }

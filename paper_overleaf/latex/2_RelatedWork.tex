@@ -1,0 +1,196 @@
+
+\vspace{-1mm}
+\section{Related Work}
+\label{sec:relatedwork}
+\vspace{-1mm}
+
+
+
+
+
+
+
+
+\vspace{-1mm}
+\subsection{Multimodal Retrieval Methods}
+\label{sec:related_multimodal_retrieval}
+\vspace{-1mm}
+
+Early multimodal retrievers were largely \emph{TextRAG}-style: they transformed multimodal components into textual surrogates via OCR, captioning, or serialization, enabling mature text retrieval pipelines but inevitably discarding vision-specific cues~\cite{16_mmmulhop, 17_unifiedprese, 18_unifying, 19_helios}.
+More recently, \emph{VisRAG}-style pipelines unify modalities by rasterizing documents into page- or region-level screenshots and embedding all content in a single \emph{visual} space~\cite{3_visrag, 4_colpali, 5_m3docvqa}.
+However, they suffer from two key limitations: (i) \textit{fixed granularity}, where large screenshots dilute query-relevant signals with irrelevant context, and (ii) \textit{limited multihop reasoning}, treating pages independently without exploiting structural links~\cite{6_densexretrieval, 7_mixofgran}.
+
+Closest to our work, \textsc{LILaC} represents a multimodal document corpus as a layered graph structure and performs structure-aware retrieval through vector-embedding-based graph traversal~\cite{1_lilac}.
+It builds a component graph linking coarse nodes (paragraphs, tables, images) and fine-grained subcomponents, using edges to represent both hierarchical containment and navigational relations.
+At query time, \textsc{LILaC} performs an edge-wise beam search driven by late-interaction scores between subqueries and nodes.
+While effective, this pipeline operates under a rigid, pre-defined plan: it relies on a uniform similarity metric for traversal, overlooking hop-specific semantics, and executes a linear expansion strategy.
+
+
+
+
+\vspace{-2mm}
+\subsection{Graph Retrieval Methods}
+\vspace{-1mm}
+
+Graph-based retrieval has been extensively studied in knowledge graph QA, where systems traverse graphs curated with \emph{typed} and \emph{semantically meaningful} relations~\cite{13_reasonpath, 24_hierargraph, tog, rog, gog}.
+However, multimodal \emph{document} graphs differ fundamentally: edges are primarily \emph{navigational} (e.g., hyperlinks) rather than semantic predicates. 
+Consequently, a retriever cannot treat traversal as simple path-finding over valid facts; it must perform online interpretation to resolve what a navigational link implies for the current query context~\cite{1_lilac}.
+Thus, KG methods struggle with the adaptive capabilities to navigate large-scale, non-edge-labeled graphs where semantic resolution is needed~\cite{16_mmmulhop, 27_mmapg}.
+
+
+\vspace{-2mm}
+\subsection{Agentic Retrieval Methods}
+\vspace{-1mm}
+
+A growing line of work treats retrieval as an iterative decision process interleaved with reasoning, rather than a single-shot nearest-neighbor lookup.
+\textsc{IRCoT} shows that multi-step questions benefit from repeatedly generating intermediate sub-questions and retrieving evidence for each step~\cite{9_ircot}.
+\textsc{ReAct} formalizes a general reasoning-and-acting loop, motivating RAG controllers that plan retrieval actions based on intermediate observations~\cite{11_react}.
+
+Despite this, most operate on \emph{flat} indices, lacking the structural awareness to navigate inter-document links. 
+Furthermore, their error correction is typically limited to query rewriting rather than history-aware backtracking. 
+While systems like \textsc{Doc-React} and \textsc{MARA} apply agents to multimodal documents, they target single-document or small-scale contexts~\cite{33_docreact, 35_mara}. 
+They do not address the open-domain challenge of traversing vast, interconnected graphs where utilizing failure feedback is critical for routing optimization.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%% Version 2
+
+
+% \textsc{VisRAG} demonstrates end-to-end vision-based retrieval–augmented generation, and \textsc{ColPali} adapts late-interaction retrieval to document images by producing multi-vector representations for efficient matching~\cite{22_colbert, 23_colbertv2}.
+% Despite their strengths, VisRAG pipelines inherit two recurring limitations:
+% (i) \textbf{fixed granularity}, where full-page or large-region screenshots mix query-relevant signals with substantial irrelevant context, and
+% (ii) \textbf{limited multihop reasoning}, where pages are retrieved independently without exploiting within-document structure or cross-document links~\cite{6_densexretrieval, 7_mixofgran}.
+
+
+
+
+
+
+% In this setting, edges directly constrain compositional reasoning, allowing agents to construct valid reasoning chains via beam search or path planning.
+% For instance, \textsc{Think-on-Graph} and \textsc{Reason-on-Graph} treat LLMs as agents that explore entities to find supporting subgraphs, relying on the explicit semantics of KG edges to guide the search~\cite{tog, rog}.
+% However, multimodal \emph{document} graphs differ fundamentally from labeled KGs.
+% Edges in document collections are primarily \emph{navigational} (e.g., hyperlinks, layout adjacency) rather than semantic predicates.
+
+% Current graph-based methods, designed for explicit KGs or small closed-set document collections, lack the adaptive reasoning capabilities required to navigate large-scale, noisy open-domain document graphs where "dead ends" are frequent and failure feedback is essential~\cite{16_mmmulhop, 27_mmapg}.
+
+
+
+
+
+% Further advancements, such as Self-RAG and Corrective-RAG, introduce critique signals to revise generations or re-retrieve when evidence is insufficient~\cite{10_selfrag, 26_correcrag, 28_unirag, 29_prism}.
+
+% Despite this progress, most agentic retrievers operate on a \emph{flat} index of independent chunks, treating retrieval as repeated similarity search over a fixed granularity~\cite{9_ircot}.
+% They typically lack \textbf{structural awareness}—the ability to navigate explicit links between documents—and their error correction is limited to query rewriting rather than \textbf{history-aware backtracking} within a graph.
+% While recent systems like \textsc{Doc-React}, \textsc{DocAgent}, and \textsc{MARA} explore tool use and iterative selection for multimodal documents, they are primarily designed for single-document understanding or small candidate sets~\cite{33_docreact, 34_docagent, 35_mara}.
+% They do not address the \textbf{open-domain} challenge where an agent must traverse a vast, interconnected graph, and leverage failed attempts as feedback to optimize subsequent routing decisions.
+
+
+% Despite this progress, most agentic retrievers still inherit two common assumptions from standard RAG pipelines:
+% (i) evidence is drawn from a \emph{flat} pool of largely independent units, and
+% (ii) retrieval actions are implemented as repeated similarity search and reranking over a \emph{fixed} granularity.
+% As a result, directly applying these controllers to multimodal documents often falls back to page-level or OCR-linearized representations, reintroducing the granularity and structure-ignorance issues discussed earlier.
+% In the multimodal document domain, agentic systems have begun to explore iterative page/region selection and tool use for multi-page and heterogeneous document QA~\cite{33_docreact, 34_docagent, 35_mara}.
+% However, these systems primarily operate \emph{within} a given document or a small candidate set: 
+% for example, \textsc{Doc-React} incrementally selects subsets of page images to balance information gain and generation uncertainty, but it does not model cross-document hyperlink navigation and it inherits the limitations of page-level visual retrieval for fine-grained component discovery~\cite{33_docreact}.
+% \textsc{DocAgent} focuses on long-context document understanding by extracting a hierarchical outline and interactively retrieving content from the provided document, rather than performing open-domain multihop retrieval over a noisy linked corpus~\cite{34_docagent}.
+% Similarly, \textsc{MARA} studies adaptive multimodal retrieval for document QA, but it does not target open-domain component retrieval over hyperlink-connected document graphs~\cite{35_mara}.
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%% Version 1
+
+
+
+% \subsection{Multimodal Retrieval Methods}
+% \label{sec:related_multimodal_retrieval}
+
+% Early multimodal retrievers were largely \emph{text-first}: they transformed multimodal components (paragraphs, tables, and figures) into textual surrogates via OCR, captioning, or serialization, enabling mature text retrieval pipelines but inevitably discarding vision-specific cues~\cite{16_mmmulhop, 17_unifiedprese, 18_unifying, 19_helios}.
+% A complementary line keeps separate encoders for text and images and fuses their retrieval scores at ranking time, which preserves modality signals but often relies on heuristic aggregation and becomes brittle when evidence must be composed across modalities~\cite{20_surveymrag, 21_beyondtext}.
+
+
+% More recently, \emph{VisRAG}-style pipelines unify modalities by rasterizing documents into page- or region-level screenshots and embedding all content in a single \emph{visual} space~\cite{3_visrag, 4_colpali, 5_m3docvqa}.
+% \textsc{VisRAG} demonstrates end-to-end vision-based retrieval–augmented generation, and \textsc{ColPali} adapts late-interaction retrieval to document images by producing multi-vector representations for efficient matching~\cite{22_colbert, 23_colbertv2}.
+% Despite their strengths, VisRAG pipelines inherit two recurring limitations: 
+% (i) \textbf{fixed granularity}, where full-page or large-region screenshots mix query-relevant signals with substantial irrelevant context, and 
+% (ii) \textbf{limited multihop reasoning}, where pages are retrieved independently without exploiting within-document structure or cross-document links~\cite{6_densexretrieval, 7_mixofgran}.
+
+
+% Closest to our work, \textsc{LILaC} represents a multimodal document corpus as a layered graph structure and performs structure-aware retrieval through vector-embedding-based graph traversal~\cite{1_lilac}.
+% In the offline stage, it builds a two-layer component graph where coarse nodes correspond to paragraphs, tables, and images, and fine nodes further decompose them into modality-specific subcomponents such as sentences, table-row segments, and detected visual objects; 
+% edges encode (i) hierarchical containment from coarse components to their subcomponents and (ii) navigational relations that preserve intra- and cross-document connectivity without pre-assigning a specific semantic meaning to each link.
+% At query time, \textsc{LILaC} first uses an LLM to decompose the query into modality-targeting subqueries and embeds them accordingly, and then performs an edge-wise beam-search traversal that repeatedly expands one-hop neighbors while scoring edges via late interaction between the subqueries and the incident fine-grained subcomponents.
+% While effective, this pipeline largely follows a \emph{single fixed traversal policy} once the initial decomposition is produced: traversal proceeds with local neighbor expansion and a similarity-driven edge scoring rule, and it does not explicitly support revising subgoals, switching traversal scope (e.g., re-seeding with a new global search), or escalating relation interpretation only when intermediate evidence indicates ambiguity or failure.
+
+
+
+
+
+% \subsection{Graph Retrieval Methods}
+
+% Graph-based retrieval has been extensively studied in KGQA and graph reasoning, where the input graph is typically curated with \emph{typed} and \emph{semantically meaningful} relations.
+% In this setting, systems traverse the graph to recover query-relevant reasoning paths or supporting subgraphs, and edge semantics directly constrain both expansion and compositional reasoning~\cite{13_reasonpath, 24_hierargraph}.
+% Representative examples of graph-conditioned retrieval-and-generation include:
+% \textsc{Think-on-Graph}, which treats an LLM as an agent that explores entities/relations via beam search on a KG to construct promising reasoning chains~\cite{tog};
+% \textsc{Reason-on-Graph}, which first plans relation paths and then retrieves valid KG reasoning paths to guide faithful step-wise reasoning~\cite{rog};
+% and \textsc{Generate-on-Graph}, which further considers incompleteKGs and allows the LLM to generate missing triples while searching, integrating internal and external knowledge~\cite{gog}.
+
+% However, multimodal \emph{document} graphs differ fundamentally from labeled knowledge graphs.
+% Edges in document collections are often \emph{navigational} (hyperlinks, cross-references, and layout adjacency) rather than explicit semantic predicates, and their query-dependent meaning must be resolved online from local context such as anchor text, surrounding paragraphs, or section structure~\cite{1_lilac}.
+% Recent multimodal multi-hop QA systems also have approaching that build structured knowledge or planning graphs, but they typically assume a \emph{distractor} setting where a small candidate set of documents is given, and is not easily extendable to open-domain settings~\cite{16_mmmulhop, 27_mmapg}.
+
+
+
+% \subsection{Agentic Retrieval Methods}
+
+% A growing line of work treats retrieval as an iterative decision process interleaved with reasoning, rather than a single-shot nearest-neighbor lookup.
+% \textsc{IRCoT} shows that multi-step questions benefit from repeatedly generating intermediate sub-questions and retrieving evidence for each step~\cite{9_ircot}.
+% \textsc{ReAct} formalizes a general reasoning-and-acting loop, motivating RAG controllers that plan retrieval actions based on intermediate observations~\cite{11_react}.
+% Self-reflective and corrective RAG variants further introduce critique signals to decide when to retrieve and how to revise generations when evidence is missing or inconsistent~\cite{10_selfrag, 26_correcrag}.
+% Recent agentic retrieval frameworks extend these ideas to scalable search and graph-centric settings, including decomposition-and-rewriting controllers and parallel reasoning chains over retrieved evidence~\cite{28_unirag, 29_prism, 30_mirage, 31_agentg}.
+
+% Despite this progress, most agentic retrievers still inherit two common assumptions from standard RAG pipelines:
+% (i) evidence is drawn from a \emph{flat} pool of largely independent units, and
+% (ii) retrieval actions are implemented as repeated similarity search and reranking over a \emph{fixed} granularity.
+% As a result, directly applying these controllers to multimodal documents often falls back to page-level or OCR-linearized representations, reintroducing the granularity and structure-ignorance issues discussed earlier.
+% In the multimodal document domain, agentic systems have begun to explore iterative page/region selection and tool use for multi-page and heterogeneous document QA~\cite{33_docreact, 34_docagent, 35_mara}.
+% However, these systems primarily operate \emph{within} a given document or a small candidate set: 
+% for example, \textsc{Doc-React} incrementally selects subsets of page images to balance information gain and generation uncertainty, but it does not model cross-document hyperlink navigation and it inherits the limitations of page-level visual retrieval for fine-grained component discovery~\cite{33_docreact}.
+% \textsc{DocAgent} focuses on long-context document understanding by extracting a hierarchical outline and interactively retrieving content from the provided document, rather than performing open-domain multihop retrieval over a noisy linked corpus~\cite{34_docagent}.
+% Similarly, \textsc{MARA} studies adaptive multimodal retrieval for document QA, but it does not target open-domain component retrieval over hyperlink-connected document graphs~\cite{35_mara}.
+
+
+
+
