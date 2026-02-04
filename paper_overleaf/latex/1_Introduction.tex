@@ -1,93 +1,86 @@
-
-\section{Introduction}
-\label{sec:introduction}
-\vspace{-0.5em}
+\section{Introduction}\label{sec:intro}
 
 
-\begin{figure}[t]
+
+\begin{figure}[ht]
   \centering
-  \includegraphics[width=\linewidth]{figures/introduction.pdf}
-  \vspace{-4mm}
-  \caption{
-    Motivating examples of multihop retrieval failures in existing graph retrieval approaches.
-    (a) Vector-similarity-driven traversal follows a spurious cue.
-    (b) Fixed retrieval plan produces an underspecified hop and fails to recover from a dead end.
+  \includegraphics[width=\linewidth]{figures/introduction_motivation.pdf}
+  \caption{Challenges of TextRAG approaches and VisRAG approaches.
+    (a) Incorrect summarization may result in possible information loss in TextRAG.
+    (b) Insufficient retrieval granularity in VisRAG.
+    (c) Limited multihop reasoning due to loss of links in VisRAG.
   }
-  \label{fig:motivating_example_figure}
-  \vspace{-6mm}
+  \label{fig:introduction_motivation}
+  \vspace{-0.5cm}
 \end{figure}
 
 
 
-% Paragraph 1) Motivation of Multimodal Document RAG
-Searching the web has become a part of everyday life.
-This routine increasingly underpins multimodal retrieval-augmented generation (RAG), where a model answers a user query by grounding its output in retrieved evidence~\cite{4_colpali}.
-In practice, much of this evidence lives in webpages or PDFs---multimodal documents with three salient characteristics:
-(i) each document is composed of multimodal \textit{components} (paragraphs, tables, and images);
-(ii) the meaning of a component is often shaped by local document context (e.g., captions and surrounding components); and 
-(iii) components are connected through explicit signals (hyperlinks, cross-references) as well as implicit signals (e.g., same-section adjacency).
-Moreover, documents themselves are linked via hyperlinks and citations, forming a large graph that users implicitly navigate while browsing.
-We refer to the resulting setting as \emph{open-domain multimodal document retrieval} (OMDR): given a query, the system must return a small ranked set of relevant components from this large, noisy, and interlinked graph, often requiring multihop and multimodal exploration~\cite{1_lilac, 9_ircot, 4_colpali}.
+Multimodal retrieval is a rapidly advancing research area, crucial for enhancing modern information retrieval systems~\cite{blip, blip2, clip}. 
+Early studies primarily focused on multimodal component retrieval, where components such as text, tables, and images had limited or no explicit relationships~\cite{multimodalqa, webqa}. 
+Recently, however, there has been an emerging shift toward open-domain multimodal document retrieval, where closely related components of various modalities are grouped together as a unified document, such as webpages or PDFs~\cite{visrag, m3docrag}.
+Such multimodal documents can be viewed as collections of potentially interconnected components (e.g., via hyperlinks as shown with \texttt{Taj Mahal} in Figure~\ref{fig:introduction_motivation}), each belonging to one of multiple modalities, including text, tables, or images.
 
+Recent approaches in multimodal document retrieval have increasingly adopted \textit{VisRAG}-based methodologies, which unify diverse modalities by treating them primarily as visual content, typically represented through screenshots such as a page of a PDF file~\cite{visrag, colpali, m3docrag}. 
+By casting multimodal retrieval as essentially an image retrieval problem, these methods leverage advanced vision-based embedding models to preserve multimodal information. 
 
+This paradigm emerged largely as a response to the limitations of earlier \textit{TextRAG}-based approaches, which predominantly relied on textual retrieval by converting visual data into textual summaries~\cite{textrag1, textrag2, textrag3, awakening, skurg, solar, unimmqa}. 
+Although effective in leveraging mature text retrieval systems, these methods inherently struggled to represent visual content adequately, resulting in potential information loss and reduction in retrieval effectiveness.
+For example, in Figure~\ref{fig:introduction_motivation}, the summary of the \texttt{Taj Mahal}'s image omits the word \texttt{minarets}, which was crucial for answering the query in this context.
 
-% Paragraph 2) Transition to Graph-based Methods 
-Given these intricate characteristics of OMDR, representing a document collection as a graph has emerged as a powerful paradigm for capturing the multi-granularity and interconnectedness of multimodal evidence~\cite{1_lilac}.
-It shows the pros of preserving the structural dependencies and navigational scaffolds inherent in webpages, which is required when navigating heterogeneous components.
-The most recent work introduces the \textit{layered component graph}, which organizes components together with their constituent subcomponents (sentences, table rows, and image objects)~\cite{1_lilac}.
-In this formulation, \emph{navigational edges} encode relations among components (e.g., hyperlinks, same-section adjacency), while \emph{hierarchical edges} connect each component to its subcomponents.
-By jointly modeling these edge types across layers, a retriever can traverse component-to-component paths for multihop exploration and move up/down the hierarchy to operate at the appropriate granularity.
 
+Despite their conceptual advances, current multimodal retrieval approaches, including VisRAG, still face two crucial limitations:
 
+\textbf{(1) Insufficient consideration of retrieval granularity.}
+Effective retrieval demands explicitly setting an optimal granularity of information representation ~\cite{densexretrieval}. 
+Existing VisRAG methods, however, typically adopt a fixed, single-granular approach---generally at the full-page screenshot level---which may include multiple components irrelevant to the query. 
+Empirically, we observed that a single screenshot typically comprises an average of three distinct components.
+Consequently, the portion of query-relevant information within each screenshot is relatively small, inevitably leading to diminished embedding quality and retrieval effectiveness.
+Thus, granularity-aware retrieval remains largely unaddressed within multimodal document retrieval settings.
+For example, in Figure~\ref{fig:introduction_motivation}(b), VisRAG struggles because the query-relevant information constitutes only a small portion of the screenshot's content.
 
-% Paragraph 3) Their Limitations
-While graph-based structures provide a rich representation of multimodal evidence, existing retrieval algorithms often struggle to fully exploit this potential due to operational rigidity.
-In particular, (a) traversal is typically driven by a single, hop-agnostic embedding-based scoring rule and (b) executed with a largely pre-specified procedure, limiting dynamic error correction.
-Figure~\ref{fig:motivating_example_figure} highlights these failures.
-In Figure~\ref{fig:motivating_example_figure}(a), it follows a superficially related textual cue and retrieves an irrelevant snippet, failing to ground on the crucial visual evidence.
-In Figure~\ref{fig:motivating_example_figure}(b), it issues an underspecified follow-up (``such battles'') and gets stuck in a dead end, rather than adapting its trajectory after the failure.
-As a result, once the retriever follows a spurious edge or reaches a dead end, errors propagate across hops and degrade final retrieval quality~\cite{9_ircot, 10_selfrag}.
-Moreover, these methods lack a principled mechanism for deciding \emph{when} expensive reasoning is warranted, leading to under-reasoning on ambiguous hops or over-spending computation across a trajectory.
+\textbf{(2) Limited capability for multihop reasoning.}
+Multimodal document retrieval inherently requires reasoning about complex intra- and inter-document relationships among components.
+Effective multihop reasoning critically depends on capturing these relationships, as within-document retrieval often necessitates integrating complementary information distributed across multiple modalities to fully represent an entity.
+Likewise, inter-document retrieval typically demands traversing semantic connections between related documents. 
+Existing VisRAG-based approaches, however, independently embed and retrieve individual screenshots via nearest-neighbor search, thereby overlooking essential interdependencies among components.
+Moreover, these methods disregard inherent structural connections within the same document, such as associations among screenshots originating from the same page or hyperlinks explicitly linking different components.
+Although some multimodal component retrieval methods have introduced multihop reasoning capabilities~\cite{skurg}, they largely focus on distractor-based closed-domain settings and rely heavily on online reasoning with Large Language Models, significantly limiting their generalization to open-domain multimodal document retrieval scenarios.
+For instance, in Figure~\ref{fig:introduction_motivation}(c), VisRAG struggles with multihop reasoning because it does not utilize the structural link from \texttt{Shah Jahan} to \texttt{Taj Mahal}.
 
 
 
-% Paragraph 4) The Need for a Reasoning-Aware Sequential Decision Process
-To overcome these limitations, we argue that a retriever must evolve from a static path-follower into an adaptive decision-maker that navigates the graph through a sequential reasoning process.
-Concretely, OMDR is naturally stateful: as evidence accumulates, the information need shifts, and failures reveal which interpretations, routes, or strategies are unproductive.
-This suggests casting traversal as a \emph{sequential decision process} over an evolving information state, where each step chooses (i) what to ask next (subquery), (ii) how to retrieve (tool/strategy), and (iii) where to move (edge type and granularity) conditioned on the current evidence.
-Achieving this requires addressing three coupled challenges.
-First, edge-following is not merely similarity matching; it often requires high-level reasoning to judge whether a candidate node will lead to the final answer under the current context.
-Second, the retriever must adapt to evolving context by refining hypotheses and subqueries, and by recovering from dead ends using failure signals rather than adhering to a fixed, pre-defined plan.
-Third, it must balance accuracy and efficiency: while LLM-based reasoning can improve retrieval precision, it introduces substantial overhead, so the system must decide economically when to escalate from lightweight matching to intensive reasoning.
 
 
 
-% Paragraph 5) Our approach
-To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}).
-We formalize OMDR as a finite-horizon \emph{information-state MDP}, where the state is a structured memory that records accumulated evidence together with the history of attempted subqueries, strategies, and explicit success/failure outcomes.
-This formulation turns graph traversal into an \emph{economically-rational} agentic workflow: at each hop, an orchestrator dynamically decides \emph{what to ask}, \emph{how to retrieve}, and \emph{where to move} given the current information state, rather than executing a rigid traversal recipe.
-To realize cost-sensitive control, \textsc{\Ours} maintains a portfolio of strategies across an accuracy--efficiency spectrum, starting from low-cost vector matching and escalating to higher-cost LLM reasoning only when a hop is ambiguous or an attempt fails.
-Finally, to make multihop navigation resilient in noisy open-domain graphs, \textsc{\Ours} introduces \emph{history-aware backtracking}: unlike standard backtracking that simply reverts the state, our approach piggybacks on failure traces to re-anchor the search to a more promising prior context, revise subsequent subqueries, and avoid repeating previously failed routing patterns.
+To address the challenges, we propose \texttt{LILaC}, an effective multimodal retrieval approach with two novel ideas:
 
+\textbf{(1) Layered component graph construction.}
+We first represent the multimodal document corpus as a layered component graph, explicitly designed to capture multimodal information at two distinct granularities. 
+This layered graph structure leverages edges to explicitly encode relationships among components within and across documents, thus inherently facilitating effective multihop reasoning.
+Additionally, we utilize a layered representation, enhancing retrieval efficiency and effectiveness.
+The coarse-grained layer---where textual content is represented as paragraphs, tables as whole entities, and images in their entirety---provides contextual understanding suitable for broad candidate generation.
+While in the fine-grained layer---where paragraphs are extracted into  sentences, tables into discrete rows, and images into detected visual objects---enables precise reasoning by decomposing content into finer units. 
+Edges in the coarse-grained layer capture semantic associations among components, while edges connecting coarse-grained nodes to their fine-grained subcomponents represent hierarchical containment relationships.
 
+\textbf{(2) Late-interaction-based subgraph retrieval in layered graph.}
+At online time, \texttt{LILaC} retrieves a query-relevant subgraph from the layered component graph. 
+A key challenge in this step is the combinatorial explosion of candidate subgraphs, resulting from the extensive number of nodes and edges distributed across both granularity layers~\cite{grag}.
+To efficiently manage this complexity, we propose a traversal-based subgraph retrieval method on the layered component graph.
+Specifically, we first decompose the original query to identify an initial candidate node set at the coarse-grained layer.
+We then iteratively perform beam search by traversing connected edges from these initial candidates, dynamically computing relevance scores at each step.
+Crucially, since explicitly computing scores for all potential edges would be computationally prohibitive, we leverage the layered structure of both the graph and query decomposition.
+In particular, edge scores are computed dynamically via late interaction between the fine-grained subqueries and the fine-grained nodes associated with each candidate edge, effectively utilizing node-level embeddings. 
 
 
-% Paragraph 6) Contributions
-In summary, we make three primary contributions:
-\vspace{-2mm}
-\squishlist
-    \item [1.] We formulate the OMDR problem as a sequential decision process with economic rationality. We redefine OMDR as an information-state MDP, operationalizing it through an LLM-enabled agentic workflow that treats retrieval strategy as a dynamic choice.
-    \item [2.] We propose dynamic cost-aware strategy escalation.
-    We introduce a novel mechanism that maintains a portfolio of strategies across an accuracy-efficiency spectrum. 
-    Our orchestrator avoids over-reasoning by starting with low-cost vector matching and only escalating to high-cost LLM reasoning when a hop is identified as ambiguous or follows a recorded failure.
-    \item [3.] We propose history-aware backtracking for resilient navigation, which converts failed traversals into constructive feedback. 
-    By piggybacking on failure traces, the orchestrator re-anchors its search to prior contexts while revising its subqueries and escalating its strategy, enhancing both robustness and efficiency.
-\squishend
-\vspace{-2mm}
 
 
 
 
+In summary, we make three key contributions: 
+(1)  We introduce a layered graph structure capturing multimodal documents at dual granularities, effectively supporting multihop reasoning.
+(2) We propose an efficient yet effective subgraph retrieval method leveraging late interaction between decomposed queries and fine-grained components.
+\updated{(3) Extensive experiments demonstrate that our approach achieves state-of-the-art retrieval accuracy on all five benchmarks, notably using only pretrained models without additional fine-tuning.}
 
 
 
@@ -96,534 +89,6 @@ In summary, we make three primary contributions:
 
 
 
-%%%%%%%%%%%%%% Version 5
 
-% This capability is becoming a core primitive for multimodal RAG, as multimodal embedders and multimodal LLMs continue to improve in representing diverse modalities and reasoning over retrieved evidence~\cite{4_colpali}.
 
 
-
-% While this graph-based structure provides a rich representation of the data, existing retrieval algorithms struggle to fully exploit its potential due to their operational rigidity.
-% First, traversal is typically driven by a single, embedding-based scoring rule, which can miss hop-specific semantics that go beyond similarity.
-% {\color{red} HI!}
-% Second, traversal is often governed by a largely pre-specified procedure (e.g., a fixed sequence of subqueries executed with a fixed traversal routine), which limits dynamic error correction.
-% As a result, once the retriever follows a spurious edge or gets trapped in a dead end, mistakes tend to propagate across hops and degrade final retrieval quality~\cite{9_ircot, 10_selfrag}.
-% {\color{red} HI!}
-% Crucially, these methods also lack a principled way to decide \emph{when} expensive reasoning is warranted: without explicit cost-awareness, they may either under-reason on ambiguous hops or over-spend computation across the trajectory.
-
-
-
-% To overcome these limitations, we argue that a retriever must evolve from a static path-follower into an adaptive decision-maker that can navigate the graph through a sequential reasoning process.
-% Achieving this requires addressing three key challenges.
-% \textit{(1) Incorporating high-level reasoning.}
-% The process of following an edge is not merely a similarity matching task; 
-% it often requires complex logical deduction to determine whether a specific node will lead to the final answer based on the current evidence.
-% \textit{(2) Adapting reasoning to evolving context.}
-% As evidence is accumulated, the information need shifts; 
-% thus, the retriever must dynamically refine its hypotheses and subqueries, and recover from dead ends by reflecting on failures rather than adhering to a fixed, pre-defined plan.
-% \textit{(3) Balancing accuracy and efficiency.}
-% While advanced reasoning via large models can improve retrieval precision, it introduces significant computational overhead.
-% An effective system must maintain a delicate balance by orchestrating a spectrum of strategies, ranging from lightweight matching to intensive reasoning, depending on the difficulty of the current hop.
-
-
-% To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}), which introduces two key innovations:
-% \textit{(1) LLM-enabled agentic traversal as a sequential decision process.}
-% We cast graph traversal as a sequential decision process, where each hop decides \emph{what to ask} (subquery), \emph{how to retrieve} (tool/strategy), and \emph{where to move} (edge type/granularity) given the current evidence.
-% To operationalize this formulation, we design an agentic framework in which each agent is explicitly equipped to invoke LLM reasoning when needed.
-% Specifically, \textsc{\Ours} supports specialized tools (e.g., a planner and a multi-strategy traverser) coordinated by an orchestrator, enabling on-demand LLM reasoning and flexible switching across retrieval modes.
-% \textit{(2) Adaptive accuracy--efficiency trade-offs with history-aware backtracking.}
-% \textsc{\Ours} maintains a portfolio of strategy variants spanning an accuracy--efficiency spectrum, from low-cost vector matching for easy hops to high-cost LLM-intensive reasoning for ambiguous hops.
-% Crucially, we incorporate a history-aware backtracking mechanism that turns failures into actionable feedback, making traversal both efficient and accurate.
-% \emph{Efficiency:} the orchestrator begins with cheap strategies and escalates to stronger (but more expensive) reasoning only when a hop is difficult or an attempt fails.
-% Upon reaching a dead end, the retriever backtracks while retaining failure traces to avoid redundant exploration and to revise the next hop (subquery/objective and strategy choice).
-% \emph{Effectiveness:} these failure signals guide subsequent hops toward more plausible paths, improving multihop reliability without repeatedly paying for expensive reasoning.
-
-
-
-
-
-%%%%%%%%%%% Version 4
-
-
-
-
-
-
-% % Paragraph 1) Motivation of Multimodal Document RAG
-% Searching the web has become part of everyday life.
-% This routine increasingly underpins multimodal retrieval-augmented generation (RAG), where a model answers a user query by grounding its output in retrieved evidence~\cite{4_colpali}.
-% In practice, much of this evidence lives in webpages or PDFs, which are multimodal documents that show the following characteristics
-% (i) A document is composed of multimodal \textit{components}, mixing paragraphs, tables, and images.
-% (ii) The meaning of each component is often shaped by local context within the document such as captions and surrounding components.
-% (iii) Components are connected through explicit signals, including hyperlinks and cross-references, and through implicit signals, including same-section adjacency.
-% Furthermore, documents are further linked to other documents through hyperlinks and citations, forming a large graph that users implicitly navigate while browsing.
-% In such a situation, the \textit task asks a system to return a small ranked set of relevant components from this large, noisy, and interlinked graph, often requiring multihop and multimodal exploration~\cite{1_lilac, 9_ircot}.
-% This capability is becoming a core primitive for multimodal RAG, as multimodal embedders and multimodal LLMs continue to improve in representing diverse modalities and reasoning over retrieved evidence~\cite{4_colpali}.
-
-
-
-
-% % Paragraph 2) Transition to Graph-based Methods 
-% Given these intricate characteristics of OMDR, representing a document collection as a graph structure has emerged as a powerful paradigm to capture the multi-granularity and interconnectedness of multimodal evidence~\cite{1_lilac}.
-% Because OMDR requires navigating a web of heterogeneous components and their complex relational signals, a graph-based representation is suited to preserving the structural dependencies and navigational scaffolds inherent in webpages.
-% The most recent work introduces \textit{layered component graph}, which explicitly organizes the collection of components and their constituent subcomponents (sentences, table rows, and image objects)~\cite{1_lilac}.
-% In this formulation, \emph{navigational edges} encode relationships among components (e.g., hyperlinks, cross-references, and same-section adjacency), while \emph{hierarchical edges} connect each component to its subcomponents.
-% By jointly modeling these edge types across layers, a retriever can traverse component-to-component paths for multihop exploration and move up/down the hierarchy to operate at the appropriate granularity, enabling multi-granularity retrieval and multihop reasoning within a unified graph.
-
-
-
-
-% % Paragraph 3) Their Limitations
-% However, while this graph-based structure provides a rich representation of the data, existing retrieval algorithms struggle to fully exploit its potential due to their operational rigidity.
-% First, traversal is typically driven by a single, embedding-based scoring rule, which may not be sufficient to resolve some hop semantics that may go beyond similarity.
-% Second, traversal is often governed by a largely pre-specified procedure (e.g., a fixed sequence of subqueries produced upfront and executed with a fixed traversal routine), which limits dynamic error correction.
-% As a result, once the retriever follows a spurious edge or gets trapped in a dead end, mistakes tend to propagate across hops and degrade final retrieval quality~\cite{9_ircot, 10_selfrag}.
-
-
-
-% % Paragraph 4) The Need for a Reasoning-Aware Sequential Decision Process
-% {\color{red} 모두 문장으로 변경}
-% To overcome these limitations, we argue that a retriever must evolve from a static path-follower into an adaptive decision-maker that can navigate the graph through a sequential reasoning process.
-% Achieving this requires addressing three key challenges.
-% \textit{(1) Incorporating high-level reasoning.}
-% The process of following an edge is not merely a similarity matching task; 
-% it often requires complex logical deduction to determine whether a specific node will lead to the final answer based on the current evidence.
-% \textit{(2) Adapting reasoning to evolving context.}
-% As evidence is accumulated, the information need shifts; 
-% thus, the retriever must dynamically refine its hypotheses and subqueries, and recover from dead ends by reflecting on failures rather than adhering to a fixed, pre-defined plan.
-% \textit{(3) Balancing accuracy and efficiency.}
-% While advanced reasoning via large models can improve retrieval precision, it introduces significant computational overhead.
-% An effective system must maintain a delicate balance by orchestrating a spectrum of strategies, ranging from lightweight matching to intensive reasoning, depending on the difficulty of the current hop.
-
-
-
-
-
-% % Paragraph 5) Our approach
-% {\color{red} 모두 문장으로 변경}
-% To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}), which introduces two key innovations:
-% \textit{(1) LLM-enabled agentic traversal as a sequential decision process.}
-% We cast graph traversal as a sequential decision process, where each hop decides \emph{what to ask} (subquery), \emph{how to retrieve} (tool/strategy), and \emph{where to move} (edge type/granularity) given the current evidence.
-% To operationalize this formulation, we design an agentic framework in which each agent is explicitly equipped to invoke LLM reasoning when needed.
-% Specifically, \textsc{\Ours} supports specialized tools (e.g., a planner and a multi-strategy traverser) coordinated by an orchestrator, enabling on-demand LLM reasoning and flexible switching across retrieval modes.
-% \textit{(2) Adaptive accuracy--efficiency trade-offs with history-aware backtracking.}
-% \textsc{\Ours} maintains a portfolio of strategy variants spanning an accuracy--efficiency spectrum, from low-cost vector matching for easy hops to high-cost LLM-intensive reasoning for ambiguous hops.
-% Crucially, we incorporate a history-aware backtracking mechanism that turns failures into actionable feedback, making traversal both efficient and accurate.
-% \emph{Efficiency:} the orchestrator begins with cheap strategies and escalates to stronger (but more expensive) reasoning only when a hop is difficult or an attempt fails.
-% Upon reaching a dead end, the retriever backtracks while retaining failure traces to avoid redundant exploration and to revise the next hop (subquery/objective and strategy choice).
-% \emph{Effectiveness:} these failure signals guide subsequent hops toward more plausible paths, improving multihop reliability without repeatedly paying for expensive reasoning.
-
-
-% % Paragraph 6) Contributions
-% In summary, we make three primary contributions:
-% \squishlist
-%     \item [1.] Formulation as a Sequential Decision Process with Economic Rationality: We redefine open-domain multimodal retrieval as an information-state MDP, operationalizing it through an LLM-enabled agentic workflow that treats retrieval strategy as a dynamic choice.
-%     % We formulate open-domain multimodal retrieval as a \textbf{sequential decision process} and operationalize it through an \textbf{LLM-enabled agentic workflow}. 
-%     %; this allows an orchestrator and specialized tools (e.g., planner, multi-strategy traverser) to adaptively decide what to ask, how to retrieve, and where to move at each hop.
-%     \item [2.] Dynamic Cost-Aware Strategy Escalation: We introduce a novel mechanism that maintains a portfolio of strategies across an accuracy-efficiency spectrum. 
-%     Our orchestrator avoids over-reasoning by starting with low-cost vector matching and only escalating to high-cost LLM reasoning when a hop is identified as ambiguous or follows a recorded failure.
-%     % We introduce an \textbf{adaptive accuracy--efficiency mechanism} that combines cost-aware strategy escalation with \textbf{history-aware backtracking}. %, leveraging traces of failed traversals as constructive feedback to minimize redundant computation while significantly improving multihop reliability.
-%     \item [3.] History-Aware Backtracking for Resilient Navigation: We convert failed traversals into constructive feedback. 
-%     By piggybacking on failure traces, the agent re-anchors its search to prior contexts while revising its subqueries and escalating its strategy, ensuring both robustness and efficiency in complex graph environments.
-%     % Extensive experiments show that \textsc{\Ours} achieves state-of-the-art retrieval performance on the \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA} benchmarks, significantly outperforming existing graph-based and single-index competitors. % by effectively navigating complex, interlinked multimodal documents.
-% \squishend
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%%%%%%% Version 3
-
-
-% Paragraph 4
-
-
-% To overcome these limitations, we argue that a retriever must evolve from a static path-follower into an \textbf{adaptive decision-maker} that can navigate the graph through a sequential reasoning process.
-% Achieving this requires addressing three key challenges.
-% \textbf{(1) Reasoning-intensive retrieval.}
-% In layered graphs, selecting what to retrieve (and which edge to follow) can require reasoning beyond direct similarity---e.g., inferring hop semantics from accumulated evidence, or interpreting visual/structural cues such as captions, table headers, and layout.
-% \textbf{(2) Adaptive reasoning.}
-% The optimal hop strategy changes as evidence accumulates; 
-% thus, the retriever must dynamically refine its hypotheses and subqueries, and recover from dead ends by reflecting on failures rather than adhering to a fixed, pre-defined plan.
-% \textbf{(3) Balancing accuracy and efficiency.}
-% While LLM-based multimodal reasoning can be highly accurate for ambiguous hops, it is expensive; lightweight retrieval is efficient but often brittle.
-% A practical OMDR system must orchestrate a spectrum of strategies and allocate computation adaptively per hop to achieve both reliability and low latency.
-
-
-% To overcome these limitations, we argue that a retriever must evolve from a static path-follower into an \textbf{adaptive decision-maker} that can navigate the graph through a sequential reasoning process.
-% Achieving this requires addressing three key challenges.
-% \textbf{(1) Adapting reasoning to evolving context.}
-% As evidence is accumulated, the information need shifts; thus, the retriever must dynamically adjust its strategy at each step rather than adhering to a fixed, pre-defined plan.
-% \textbf{(2) Resilience to dead ends.}
-% In open-domain graphs, encountering irrelevant paths or noisy subgraphs is inevitable.
-% The challenge is not merely to backtrack to a previous state, but to \emph{recover intelligently} by analyzing why the previous path failed, turning the failure into a signal to prune future search paths.
-% \textbf{(3) Orchestrating diverse strategies.}
-% Different nodes and edges in a layered graph require different reasoning capabilities---some necessitate simple text matching, while others demand complex multimodal reasoning over visual and structural layouts.
-% A robust system must possess a diverse toolkit and an orchestration mechanism to assign the most effective reasoning tool to each specific hop based on the evolving context.
-
-
-
-% Paragraph 5
-
-% To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}), which introduces two key innovations:
-% % Unlike prior methods that treat failure as a stopping condition, \textsc{\Ours} treats failure as a constructive signal through two key innovations.
-% \textbf{(1) Agentic Workflow.}
-% To execute this adaptive navigation, we introduce an agentic framework comprising a \textit{tool list} that covers diverse reasoning strategies (e.g., local/global hop, LLM reasoning, vector search granularity) and an \textit{orchestrator}.
-% At each step, the orchestrator analyzes the current search context---including both successful history and previous failures---to assign the most effective tool and subquery for the next hop.
-% This allows the system to seamlessly switch strategies, recovering from dead ends to find the correct evidence path.
-% \textbf{(2) History-aware Backtracking.}
-% Standard backtracking simply reverts the state, discarding the effort spent on the failed path.
-% In contrast, our approach \textit{piggybacks} on the context of failed traversals.
-% By leveraging insights from the "rejected" paths, the model optimizes the selection of alternative paths, ensuring it does not repeat the same mistake.
-
-
-% To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}), which introduces two key innovations:
-% \textbf{(1) Modeling Traversal as a Sequential Decision Process}
-% % Sequential decision process로 modeling한 다음에, 이 process의 각 부분을 agent로 설계한다.
-% We introduce an agentic framework comprising a \textit{tool list} that covers diverse reasoning strategies and an \textit{orchestrator}.
-% At each step, the orchestrator analyzes the current search context to assign the most effective tool and subquery for the next hop.
-% This allows the system to seamlessly switch between different granularities and reasoning modes, ensuring that the most appropriate capability is applied to each specific part of the graph.
-% \textbf{(2) Balancing Effectiveness and Efficiency via Adaptive Strategies and Backtracking.}
-% To solve the retrieval problem efficiently, \textsc{\Ours} utilizes a range of strategy variants—from high-cost, LLM-intensive paths for complex reasoning to low-cost, vector-based paths for simple matching.
-% Furthermore, we incorporate a \textbf{history-aware backtracking mechanism} that treats failures as constructive signals.
-% Instead of simply discarding failed paths, our approach analyzes the context of "dead ends" to refine the selection of alternative routes, thereby preventing redundant computations and intelligently recovering from errors to find the correct evidence path.
-
-
-% To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}), which introduces two key innovations:
-% \textbf{(1) Agentic Workflow.}
-% We introduce an agentic framework comprising a \textit{tool list} that supports diverse hop reasoning operations (e.g., local/global hop, retrieval at multiple granularities, optional multimodal/LLM reasoning for disambiguation and verification) and an \textit{orchestrator}.
-% At each step, the orchestrator analyzes the current search context---including the query, gathered evidence, and traversal history---to choose the next tool, subquery, and edge to execute.
-% \textbf{(2) Efficient \& effective self-correcting traversal.}
-% We explicitly construct multiple traversal variants that trade off cost and accuracy, spanning from efficient but coarse embedding-based strategies to more effective but slower LLM-heavy strategies, and invoke them selectively based on hop difficulty.
-% Crucially, we incorporate \textit{history-aware backtracking}: when a path leads to an unproductive region, \textsc{\Ours} backtracks while retaining and exploiting the failure context as negative feedback, pruning future search paths to avoid repeating the same mistakes and improving multihop reliability.
-
-% \textsc{\Ours} maintains a portfolio of strategy variants that span an accuracy--efficiency spectrum, ranging from low-cost vector-based matching for easy hops to high-cost LLM-intensive reasoning for ambiguous hops.
-% Rather than committing to a single fixed routine, the orchestrator starts from efficient strategies and \emph{escalates} to stronger (but more expensive) reasoning only when the current hop is difficult or when earlier attempts fail.
-% Crucially, we incorporate a \textbf{history-aware backtracking mechanism} that treats failures as constructive feedback.
-% When the traversal hits a dead end, \textsc{\Ours} does not merely revert the state; it records the failed evidence, traversed edges, and attempted strategies, and uses them to (i) avoid redundant exploration of similar paths, (ii) revise the subquery or hop objective, and (iii) select a more appropriate strategy variant for the next attempt.
-% This backtracking-driven adaptation improves \emph{efficiency} by minimizing unnecessary expensive calls and repeated search, while simultaneously improving \emph{effectiveness} by using failure signals to steer traversal toward more plausible evidence paths.
-
-% \textsc{\Ours} maintains strategy variants spanning cheap vector matching to expensive LLM-intensive reasoning, and escalates cost only when needed.
-% When a path fails, our history-aware backtracking records failure traces (evidence/edges/strategies) to avoid redundant exploration, revise the next hop, and choose better strategies, improving both efficiency and multihop reliability.
-
-
-
-% To address these needs, we propose \textsc{\textbf{\OurFullName}} (\textsc{\Ours}), which introduces two key innovations:
-% \textbf{(1) Modeling Traversal as a Sequential Decision Process with LLM-Enabled Agents.}
-% We cast graph traversal as a sequential decision process, where each hop is an action that decides \emph{what to ask} (subquery), \emph{how to retrieve} (tool/strategy), and \emph{where to move} (edge type and granularity) based on the current evidence state.
-% To operationalize this formulation, we design an agentic framework in which each agent is explicitly equipped to invoke LLM reasoning when needed.
-% Concretely, \textsc{\Ours} provides a tool suite that assigns different roles---e.g., a \emph{planner} that proposes and refines hop-level objectives, and a \emph{multi-strategy traverser} that executes retrieval and edge-following across layers---together with an \emph{orchestrator} that supervises these agents.
-% At every step, the orchestrator selects the most suitable agent/tool and generates the next subquery, enabling flexible switching across reasoning modes and retrieval granularities throughout the traversal.
-% \textbf{(2) Balancing Effectiveness and Efficiency via Adaptive Strategies and History-Aware Backtracking.}
-% \textsc{\Ours} maintains a portfolio of strategy variants that span an accuracy--efficiency spectrum, ranging from low-cost vector-based matching for easy hops to high-cost LLM-intensive reasoning for ambiguous hops.
-% Rather than committing to a single fixed routine, the orchestrator starts from efficient strategies and \emph{escalates} to stronger (but more expensive) reasoning only when the current hop is difficult or when earlier attempts fail.
-% Crucially, we incorporate a \textbf{history-aware backtracking mechanism} that treats failures as constructive feedback.
-% When the traversal hits a dead end, \textsc{\Ours} does not merely revert the state; it records the failed evidence, traversed edges, and attempted strategies, and uses them to (i) avoid redundant exploration of similar paths, (ii) revise the subquery or hop objective, and (iii) select a more appropriate strategy variant for the next attempt.
-% This backtracking-driven adaptation improves \emph{efficiency} by minimizing unnecessary expensive calls and repeated search, while simultaneously improving \emph{effectiveness} by using failure signals to steer traversal toward more plausible evidence paths.
-
-
-
-
-
-
-
-
-
-%%%%%%%%%%%%%% Version 2
-
-
-% Paragraph 2) Existing approaches & their problems
-% Prior work on OMDR has advanced along two complementary directions.
-% The \textit{first direction} reduces multimodal retrieval to a single-space nearest-neighbor search by converting every component into one modality.
-% One common pipeline converts non-text components into text through OCR, captioning, or layout-to-text linearization, and then applies dense retrieval in the text embedding space~\cite{unimmqa, solar}.
-% Another pipeline rasterizes pages or regions into images and retrieves them in a vision-language embedding space, treating retrieval as image search~\cite{3_visrag, 4_colpali, 5_m3docvqa}.
-% These single-index methods are simple and scalable, but the conversion step can be lossy and can blur fine-grained signals into a large retrieval unit~\cite{6_densexretrieval, 7_mixofgran}.
-% A flat index also treats each unit independently, so it does not directly exploit explicit connections such as within-page references or hyperlinks that support multihop retrieval.
-
-
-
-
-% Given these intricate characteristics of OMDR, the underlying data for solving the task is inherently \textit{multi-granular} and \textit{highly interconnected}.
-% Each document is composed of heterogeneous multimodal \textit{components}---including paragraphs, tables, and images---whose meanings are often shaped by local context such as captions, surrounding text, and layout.
-% Moreover, components are linked not only within a document via explicit and implicit signals (e.g., cross-references, hyperlinks, and section-level adjacency), but also across documents through citations and hyperlinks, forming a large, noisy graph that users implicitly traverse while browsing.
-% These properties make a graph abstraction particularly natural: by modeling components (and optionally documents/sections) as nodes and their contextual and navigational relations as edges, graph-based retrieval can explicitly leverage the connectivity signals required for multihop evidence discovery, and has thus emerged and evolved as a principled paradigm for OMDR~\cite{1_lilac, 9_ircot}.
-% In particular, recent work shows that a \textit{layered component graph} better exploits these characteristics by representing document--component relations at multiple granularities (e.g., coarse document/section-level navigation followed by fine-grained component selection), enabling more effective and scalable multihop retrieval over multimodal corpora~\cite{1_lilac}.
-
-
-
-% Gemini
-% Paragraph 2) Transition to Graph-based Methods and their Limitations
-% Given these intricate characteristics of OMDR, representing a document collection as a \textit{layered component graph} has emerged as a powerful paradigm to capture the multi-granularity and interconnectedness of multimodal evidence~\cite{1_lilac}.
-% By modeling each paragraph, table, and image as distinct nodes and encoding their structural relationships---such as intra-document layouts and inter-document hyperlinks---as edges, this approach allows retrievers to navigate the complex information landscape more effectively than flat, single-index methods.
-
-% However, while this graph-based structure provides a rich representation of the data, existing retrieval algorithms fail to fully exploit its potential due to their operational rigidity.
-% First, they predominantly rely on a uniform, vector-based similarity metric for traversal, which overlooks the \textit{hop-specific semantics}---failing to distinguish when a hop requires visual pattern matching versus logical text-based deduction.
-% Second, these methods typically operate under rigid, pre-defined plans, such as executing a fixed sequence of subqueries generated a priori.
-% Consequently, they lack the flexibility for dynamic error correction; once the retriever follows a misleading link or encounters a noise-heavy subgraph, it cannot recover, leading to inevitable error propagation throughout the chain~\cite{9_ircot, 10_selfrag}.
-
-
-
-% ChatGPT
-% Paragraph 2) Prior Works
-% The characteristics of OMDR data naturally motivate a graph-based view.
-% Because a corpus consists of heterogeneous \textit{components} (paragraphs, tables, images), whose meanings depend on local context (captions, surrounding text, layout), and because components and documents are densely connected via explicit and implicit links (hyperlinks, cross-references, adjacency), representing the corpus as a component graph allows a retriever to directly exploit the same navigational signals that users follow while browsing.
-% Accordingly, recent work has advanced structure-aware retrieval by constructing a \textit{layered component graph} and performing multihop subgraph retrieval on top of it~\cite{1_lilac}.
-% In particular, LILaC models multimodal information at dual granularities (coarse vs.\ fine), enabling efficient candidate discovery at a coarse layer while preserving precise evidence selection through fine-grained components~\cite{1_lilac}.
-% Overall, this line of work demonstrates that explicitly modeling document--component relations and connectivity is a powerful inductive bias for OMDR.
-
-% However, despite the representational gains of layered graphs, existing graph-based retrievers still share rigidity in their \textit{retrieval algorithms}.
-% First, traversal is typically driven by a single, embedding-based scoring rule, which is not sufficient to express \textit{hop-specific needs} that may go beyond similarity---e.g., deciding when to rely on direct multimodal matching versus reasoning over previously accumulated evidence.
-% Second, traversal is often governed by a largely pre-specified procedure (e.g., a fixed sequence of subqueries produced upfront and executed with a fixed traversal routine), which limits dynamic error correction.
-% As a result, once the retriever follows a spurious edge or gets trapped in a dead end, mistakes tend to propagate across hops and degrade final retrieval quality~\cite{9_ircot, 10_selfrag}.
-
-% ChatGPT
-% Paragraph 3) Challenges for reasoning-aware graph traversal
-% To overcome this algorithmic rigidity, we view OMDR graph traversal as a \textit{sequential decision process} in which the retriever repeatedly (i) interprets the current state---the user query, retrieved evidence, and traversal history---and (ii) chooses the next retrieval action.
-% This shift from static planning to decision-making introduces three key challenges.
-% \textbf{(1) Adapting reasoning to evolving context.}
-% Since the information need evolves as evidence is accumulated, the retriever must adjust its strategy at each step, rather than committing to a fixed plan decided at the beginning.
-% \textbf{(2) Resilience to dead ends.}
-% In open-domain graphs, failures are inevitable due to noise, missing links, or misleading associations.
-% The goal is not only to backtrack, but to \emph{recover intelligently} by diagnosing why a path failed and using that failure as feedback for selecting a better alternative.
-% \textbf{(3) Orchestrating diverse strategies.}
-% Different hops require different capabilities---some benefit from coarse-grained navigation, others from fine-grained evidence selection, and still others from multimodal or logical reasoning.
-% An effective system therefore needs a diverse toolkit and an orchestration mechanism that can assign the most suitable strategy to each hop based on the current context.
-
-
-
-
-
-
-
-
-
-
-% % Paragraph 2) Prior Works
-% The \textit{second direction} makes structure explicit by representing a document collection as a \textit{layered component graph} and performing graph traversal for retrieval~\cite{1_lilac}.
-% It models each paragraph, table, and image as a node, utilizing edges to capture co-occurrence within documents and navigational links across them.
-% While this structure-aware view supports multihop retrieval, existing approaches exhibit two critical limitations rooted in their rigidity.
-% First, they rely on a uniform, vector-based similarity metric for traversal, which overlooks \textit{hop-specific semantics}---failing to distinguish when a hop requires visual matching versus logical deduction.
-% Second, these methods typically operate under rigid, pre-defined plans (e.g., executing a fixed sequence of subqueries generated a priori).
-% Consequently, they lack the flexibility to perform dynamic error correction; once the retriever follows a misleading link or encounters a dead end, it cannot recover, leading to error propagation throughout the chain~\cite{9_ircot, 10_selfrag}.
-
-
-
-% % Paragraph 3) Challenges for reasoning-aware graph traversal
-% These limitations suggest that a robust retriever must not only traverse a graph but also operate as an adaptive decision-maker.
-% To achieve this, the retrieval process must evolve from static planning to a sequential decision process, addressing three key challenges.
-% \textbf{(1) Adapting reasoning to evolving context.}
-% Since the information need changes as evidence is accumulated, the retriever must dynamically adjust its strategy at each step, rather than following a static plan.
-% \textbf{(2) Resilience to dead ends.}
-% In open-domain graphs, failures are inevitable due to noise or missing links.
-% The challenge is not merely to backtrack (i.e., revert to a previous state) but to \emph{recover intelligently} by analyzing why the previous path failed, turning the failure into a signal for the next move.
-% \textbf{(3) Orchestrating diverse strategies.}
-% Different hops require different reasoning capabilities---some need simple text matching, while others require complex multimodal reasoning.
-% An effective system must possess a diverse toolkit and an orchestration mechanism to assign the most effective reasoning tool to each specific hop.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%%%%%%%%%%%%%%% Version 1
-
-
-
-
-
-
-% % Paragraph 1) Motivation of Multimodal Document RAG
-% Searching the web has become part of everyday life.
-% This routine increasingly underpins multimodal retrieval-augmented generation (RAG), where a model answers a user query by grounding its output in retrieved evidence~\cite{4_colpali}.
-% In practice, much of this evidence lives in webpages or PDFs, which are multimodal documents that show the following characteristics
-% (i) A document is composed of multimodal \textit{components}, mixing paragraphs, tables, and images.
-% (ii) The meaning of each component is often shaped by local context within the document such as captions, surrounding text, or layout.
-% (iii) Components are connected through explicit signals, including hyperlinks and cross-references, and through implicit signals, including same-section adjacency.
-% Furthermore, documents are further linked to other documents through hyperlinks and citations, forming a large graph that users implicitly navigate while browsing.
-% In such a situation, the \textbf{open-domain multimodal document retrieval (OMDR)} task asks a system to return a small ranked set of relevant components from this large, noisy, and interlinked graph, often requiring multihop exploration~\cite{1_lilac, 9_ircot}.
-% This capability is becoming a core primitive for multimodal RAG, as multimodal embedders and multimodal LLMs continue to improve in representing diverse modalities and reasoning over retrieved evidence~\cite{4_colpali}.
-
-
-
-% % Paragraph 2) Existing approaches & their problems
-% Prior work on OMDR has advanced along two complementary directions.
-% The \textit{first direction} reduces multimodal retrieval to a single-space nearest-neighbor search by converting every component into one modality.
-% One common pipeline converts non-text components into text through OCR, captioning, or layout-to-text linearization, and then applies dense retrieval in the text embedding space~\cite{unimmqa, solar}.
-% Another pipeline rasterizes pages or regions into images and retrieves them in a vision-language embedding space, treating retrieval as image search~\cite{3_visrag, 4_colpali, 5_m3docvqa}.
-% These single-index methods are simple and scalable, but the conversion step can be lossy and can blur fine-grained signals into a large retrieval unit~\cite{6_densexretrieval, 7_mixofgran}.
-% A flat index also treats each unit independently, so it does not directly exploit explicit connections such as within-page references or hyperlinks that support multihop retrieval.
-
-
-% The \textit{second direction} makes structure explicit by representing a document collection as a \textit{component graph} and performing graph traversal for retrieval~\cite{1_lilac}.
-% It models each paragraph, table, and figure as a node, and it adds edges that capture co-occurrence within the same document and navigational links across documents.
-% With each node embedded, it traverses through the graph by expanding through the edges.
-% This structure-aware view supports multihop retrieval, but current traversal pipelines still resolve relationships in a shallow manner.
-% Edge-based traversal is driven primarily by embedding similarity, which may not interpret what a specific link implies for the query.
-% It also traverses using a single fixed plan and fixed scoring rules, driven by decomposed subqueries generated once before the traversal. 
-% As a result, the retriever has limited ability to revise subgoals, retry with stronger reasoning, or switch traversal strategies when early steps are ambiguous or wrong~\cite{9_ircot, 10_selfrag}.
-
-
-
-
-% % Paragraph 4) Challenges for reasoning-aware graph traversal
-% These limitations point to a missing capability in current structure-aware retrieval.
-% A retriever should not only traverse a document graph but also \emph{interpret} what an edge implies for the query, and \emph{revise} its plan as intermediate evidence changes which hop is most promising~\cite{9_ircot}.
-% A natural direction is to use an LLM as a controller during traversal~\cite{10_selfrag, 11_react}.
-% In this view, retrieval becomes a sequential decision process: at each step, the retriever determines the current subgoal, selects candidates to explore next, and chooses how much computation to spend before committing to a hop.
-
-% A practical solution, however, faces three challenges.
-% \textbf{(1) Exploration beyond local neighbors.}
-% Query-relevant evidence is not always reachable via short-range neighbor expansion, since hyperlinks and cross-references can be sparse, noisy, or missing in open corpora.
-% The retriever therefore must interleave local traversal with occasional \emph{global jumps} (e.g., corpus-wide search), while still exploiting the graph when it provides reliable navigational cues.
-% \textbf{(2) Adaptive retrieval strategies.}
-% Successful multihop retrieval requires handling diverse cases that cannot be covered by a single fixed procedure.
-% First, the appropriate retrieval \emph{granularity} varies across queries and across hops, ranging from coarse components to fine-grained regions~\cite{6_densexretrieval, 7_mixofgran}.
-% Second, the need for \emph{explicit reasoning} is also hop-dependent: some steps can be resolved by cheap similarity matching, while others require reasoning over an edge-induced dependency (e.g., interpreting what a link or reference implies under the current subgoal).
-% \textbf{(3) Accuracy--efficiency trade-off.}
-% Invoking an LLM at every hop for planning, critique, and relation interpretation can be expensive and unstable~\cite{10_selfrag}.
-% The retriever should escalate reasoning only when necessary, reuse intermediate results to avoid redundant search, and carefully control the \emph{context budget} passed to the LLM so that reasoning does not rely on ever-growing prompt contexts.
-
-% % Document-level도 지금 생략된 상태
-% % Replanning은 지금 생략된 상태
-
-
-
-
-
-
-% % Paragraph 5) Our approach
-% To address these challenges, we propose \textsc{\Ours}, an accurate component retriever based on LLM-guided graph traversal over a layered component graph.
-% We build on a representation that treats a multimodal corpus as connected \textit{components}, following prior work~\cite{1_lilac}.
-% \textsc{\Ours} adds adaptive control on top of this structure through two ideas.
-% \textbf{(1) Multi-strategy traversal.}
-% \textsc{\Ours} maintains a strategy bank that varies traversal scope, retrieval granularity, and reasoning effort.
-% Depending on the subgoal and the reliability of local links, the agent can expand only to a node's neighbors, re-seed with a corpus-wide vector search, or combine both when local edges are uninformative.
-% Candidate scoring can likewise adapt: it may operate at the coarse component level, descend to fine-grained subcomponents, or use hybrid scoring that focuses on small query-relevant regions inside a component.
-% When similarity signals are ambiguous, the agent selectively invokes an LLM to interpret relations induced by links or adjacency and rerank candidates accordingly.
-% \textbf{(2) Progressive Traversal Orchestration.}
-% To balance accuracy and efficiency, \textsc{\Ours} schedules strategies from cheap to expensive.
-% After each retrieval attempt, the orchestrator inspects the retrieved components and judges whether the current subgoal is satisfied; if not, it either retries with a stronger strategy or replans the subgoal using partial evidence already obtained.
-% If the subgoal is satisfied, the orchestrator summarizes the newly acquired evidence into an updated state, derives the next subgoal (or subquery), and selects an appropriate strategy to pursue it.
-% This failure-aware loop corrects early mistakes without restarting traversal from scratch, while limiting LLM usage by escalating only on demand and keeping prompts compact via evidence selection and reuse.
-
-
-
-
-% % Paragraph 6) Contributions
-% In summary, we make four contributions.
-% \squishlist
-%     \item [1.] We motivate a reasoning-aware and failure-aware view of open-domain multimodal component retrieval, and cast it as sequential, agentic traversal over a linked multimodal component graph.
-%     \item [2.] We introduce a multi-strategy traversal agent with a strategy bank that adapts traversal scope (local expansion vs.\ global jumps), retrieval granularity (coarse vs.\ fine), and optional LLM reasoning for relation interpretation and reranking.
-%     \item [3.] We design a progressive traversal orchestrator that detects failures, retries, and replans subgoals using intermediate evidence, achieving improved retrieval accuracy and accuracy.
-%     \item [4.] Extensive experiments show that our implementation of \textsc{\Ours} achieves the state-of-the art results on the benchmarks of \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA}, both on retrieval accuracy and end-to-end QA accuracy.
-% \squishend
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% \begin{figure*}[t]
-%   \centering
-%   \includegraphics[width=\linewidth]{figures/Figure3.pdf}
-%   \caption{
-%     \textbf{Overview of Evaluation Benchmarks.}
-%     We evaluate our method across simulation and real-world tasks.
-%     \textbf{Top (Simulation):} We construct \textit{Personalized-SIMPLER} (left/middle) and \textit{Personalized-VLABench} (right) by repopulating existing environments with user-specific assets.
-%     \textbf{Bottom (Real-world):} We conduct physical experiments on a SO-101 arm using 8 diverse object categories, covering both selection and pick-and-place tasks.
-%     In all scenarios, the agent must identify a specific target instance among visually similar distractors, requiring precise instance-level grounding beyond generic category recognition.
-%     }
-%   \label{fig:benchmarks}
-% \end{figure*}
-
-
-
-
-% These limitations point to a missing capability in current structure-aware retrieval. 
-% Traversal should be able to interpret what an edge or a relation implies for the query, and it should revise the plan when intermediate evidence changes the next hop~\cite{9_ircot}.
-% A natural direction is to use an LLM as a controller during traversal~\cite{10_selfrag, 11_react}.
-% The retriever repeatedly decides the current subgoal, the next candidates to explore, and the amount of computation to spend before committing to a hop.
-% A practical solution, however, faces three challenges. 
-% \textbf{(1) Exploration beyond local neighbors.} 
-% Relevant evidence is not always reachable by short neighbor expansion, because hyperlinks can be sparse, noisy, or missing in open corpora.
-% The retriever therefore needs to mix local traversal with occasional global jumps, while still exploiting the graph when it is informative.
-% \textbf{(2) Adaptive retrieval strategies.}
-% 올바른 retrieval을 위해서는 여러 경우의 수를 고려해야 하며, 이런 것들은 다양한 strategy로 표현되어야 한다.
-% 첫째는 vector search의 granularity로, the right retrieval unit changes across queries and across hop~\cite{6_densexretrieval, 7_mixofgran}.
-% 둘째는 traversal에 LLM의 reasoning이 필요한지의 여부로, Some steps succeed with coarse components and cheap similarity, while others require fine-grained matching or explicit reasoning about a dependency expressed by an edge.
-% \textbf{(3) Accuracy--efficiency trade-off.} 
-% Agentic control can be expensive and unstable if an LLM is invoked at every hop for planning and critique.
-% The retriever should escalate reasoning only when necessary, and it must reuse intermediate results to avoid redundant search.
-% 또한, 각 reasoning을 할 때 LLM에게 주어지는 context의 길이를 크게 하지 않도록 조절하는 것 또한 중요하다. 
-
-
-
-
-% To address these challenges, we propose \textsc{\Ours}, an accurate component retriever based on llm-reasoning-powered graph traversal over a layered component graph.
-% We build on a graph representation that treats a multimodal corpus as connected \textit{components}, following prior work~\cite{1_lilac}. 
-% % Each page contributes coarse nodes for whole paragraphs, tables, and figures, and it also contributes fine nodes for their constituent units such as sentences, table rows, or detected visual objects.
-% % Edges preserve navigational signals, including within-page adjacency and cross-document hyperlinks, and they also connect each coarse node to its fine-grained subcomponents.
-% \textsc{\Ours} adds adaptive control on top of this structure through two ideas. 
-% \textbf{(1) Multi-strategy traversal.} 
-% \textsc{\Ours} maintains a strategy bank that varies traversal scope, similarity granularity, and reasoning effort. 
-% A strategy may expand only graph neighbors, perform a corpus-wide vector search, or combine both when local edges are uninformative.
-% A strategy may score candidates at the coarse level, at the fine level, or with hybrid scoring that focuses on small query-relevant regions inside a component.
-% A strategy may also invoke an LLM to interpret relations and rerank candidates when similarity alone is ambiguous. 
-% \textbf{(2) Progressive Traversal Orchestration.} 
-% \textsc{\Ours} schedules strategies from cheap to expensive to balance accuracy and efficiency.
-% After each retrieval attempt, the orchestrator inspects the retrieved components and judges whether the current subgoal is satisfied.
-% If it is not, the orchestrator either retries with a stronger strategy or replans the subgoal using the partial evidence already retrieved.
-% This failure-aware loop corrects early mistakes without restarting traversal from scratch, and it limits LLM usage by escalating only on demand.
-% Finally, we aggregate candidates across attempts and output a compact ranked evidence set for downstream multimodal RAG.
-
-
-
-% In summary, we make four contributions. 
-% \squishlist
-%     \item [1.] We motivate a failure-aware and reasoning-aware view of open-domain multimodal component retrieval, and we cast it as agentic traversal over a multimodal component graph with explicit links.
-%     \item [2.] We present \textsc{\Ours}, which augments layered component graphs with adaptive planning while preserving multimodal component boundaries and navigational structure.
-%     \item [3.] We introduce a traversal agent with a strategy bank that controls traversal scope, retrieval granularity, and optional LLM reasoning for relation interpretation and reranking.
-%     \item [4.] We design a progressive traversal orchestrator that retries, switches strategies, and replans subtasks based on intermediate evidence, and we demonstrate improved retrieval accuracy and accuracy--cost trade-offs on open-domain multimodal multihop benchmarks.
-% \squishend

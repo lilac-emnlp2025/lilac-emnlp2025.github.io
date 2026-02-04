@@ -1,0 +1,57 @@
+\section{Related Work}
+
+
+
+\subsection{Multimodal Document Retrieval}
+
+
+Early multimodal retrieval methods primarily used a \emph{text-centric} strategy, converting all components—paragraphs, tables, and figures—into plain text, thus losing essential visual cues~\cite{skurg, solar, unimmqa, helios}. 
+Later approaches maintained separate embedding spaces for text and images, encoding each modality independently and merging their scores heuristically~\cite{mmragsurvey, beyondtext}. 
+However, these methods struggle with reasoning across modalities due to disjoint embeddings.
+
+
+Recent work pushes modality unification a step further through \textbf{VisRAG} pipelines: documents are rasterized into page- or region-level screenshots, so that paragraphs, tables, and images alike are embedded in a single \emph{visual} space.
+\texttt{VisRAG} demonstrates end-to-end vision-based retrieval–augmented generation, while \texttt{ColPali} introduces a late-interaction vision–language model that produces multi-vector page embeddings.
+Despite their strengths, VisRAG approaches inherit some limitations.
+(i) \textbf{Fixed granularity:} retrieval granularity is fixed as full-page screenshots, which may contain query-irrelevant context.
+(ii) \textbf{Limited multihop reasoning:} current pipelines treat each screenshot independently, ignoring the dependencies between components.
+
+
+
+\subsection{Granularity of Retrieval}
+
+\begin{figure*}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{figures/system_overview.pdf}
+  \caption{Overview of \texttt{LILaC}.
+  (a) A layered component graph is constructed by organizing multimodal documents into coarse- and fine-grained layers. 
+  (b) The query is decomposed, followed by modality classification for each subquery.
+  (c) \texttt{LILaC} dynamically retrieves a query-relevant subgraph through iterative beam-search traversal. 
+  }
+  \label{fig:idea_overview}
+  \vspace{-0.5cm}
+\end{figure*}
+
+Previous studies have explored retrieval granularity across various modalities. 
+In text retrieval, \texttt{DenseXRetrieval} demonstrates improved retrieval accuracy using finer sentence- and proposition-level units~\cite{densexretrieval}. 
+\texttt{Mix-of-granularity} dynamically selects the optimal granularity tailored to each query~\cite{mixofgranularity}, while \texttt{RAPTOR} starts from sentences and recursively clusters and summarizes them into coarser units~\cite{raptor}. 
+For table modality, \textsc{OTT-QA} segments tables into header-plus-row units for targeted row-level retrieval~\cite{ottqa}. 
+However, granularity in multimodal document retrieval remains largely unexplored.
+
+
+
+
+
+
+
+
+
+\subsection{Multimodal Embedder Models}
+
+Recently, multimodal embedders and their corresponding benchmarks~\cite{vlm2vec, uniir} have emerged as active research areas due to the limitations of traditional uni- or cross-modal embedders in dynamic retrieval scenarios.
+Unlike conventional unimodal embedders~\cite{dpr, sentencebert}, multimodal approaches specifically address dynamic settings characterized by retrieval tasks guided by explicit \textit{modality instructions}.
+Advanced models such as \texttt{MMEmbed}, \texttt{UniME}, and \texttt{mmE5} leverage sophisticated multimodal language models along with modality-specific fine-tuning, significantly improving retrieval performance under clear modality instructions~\cite{mmembed, unime, mme5}.
+However, existing multimodal embedders predominantly focus on training at the component level, leaving the effective use of these models for multimodal document retrieval largely unexplored.
+Furthermore, scenarios involving retrieval tasks without explicit instructions or with ambiguous contexts have yet to be thoroughly investigated.
+
+

@@ -1,49 +1,10 @@
-\vspace{-2mm}
+\vspace{-1mm}
 \section{Conclusion}
-\vspace{-1.5mm}
-% We proposed \textsc{\OurFullName} (\textsc{\Ours}), which redefines open-domain multimodal retrieval as a \textit{sequential decision process} grounded in the principle that failure is a constructive signal.
-% Instead of treating dead ends as mere stopping points, our history-aware backtracking mechanism piggybacks on failed traversals, leveraging insights from rejected paths to optimize subsequent navigation.
-% This resilient search is executed via an agentic workflow, where an orchestrator dynamically assigns the most effective strategy from a diverse tool list—ranging from simple visual matching to complex logical deduction—adapting to the evolving needs of each hop.
-% Extensive experiments on \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA} demonstrate that \textsc{\Ours} achieves state-of-the-art performance, significantly outperforming rigid, pre-planned baselines.
-
-We propose \textsc{\OurFullName} (\textsc{\Ours}), an agentic multimodal retriever that models graph traversal as a \textit{sequential decision process} over an explicit information state.
-% \textsc{\Ours} maintains a structured memory that logs retrieved evidence together with subqueries, actions, and \emph{success/failure} outcomes, turning dead ends into actionable signals rather than terminal states.
-\textsc{\Ours} maintains a structured memory of subqueries and action history, transforming failures into actionable signals rather than dead ends. 
-Building on this, the Orchestrator makes retrieval \emph{economically rational}: it dynamically chooses when to traverse, replan, or stop, and performs cost-aware strategy escalation—starting from low-cost matching and selectively pusuing accuracy over efficiency when ambiguity or failure justifies the added computation.
-Finally, \textsc{\Ours} introduces history-aware backtracking via re-anchoring, using history to resume from more promising prior contexts. %, revise subsequent subqueries, and avoid repeating failed routing patterns.
-Extensive experiments on \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA} demonstrate state-of-the-art accuracy on retrieval and downstream QA, validating the effectiveness of failure-aware traversal.%
+\vspace{-1mm}
 
 
-
-
-
-
-
-
-
-%%%%%%%%%%%%%%% Version 1 
-
-
-% We introduce open-domain multimodal document retrieval in web corpora, where query-relevant signals are often sparse, multimodal, and multiple hops away through noisy navigational links.
-% We proposed \textsc{\Ours}, which augments a layered multimodal component graph traversal with LLM-guided, failure-aware control.
-% Our traversal agent supports diverse strategies that adjust neighborhood expansion versus corpus-wide re-seeding, coarse versus fine-grained scoring, and optional relation-aware reasoning for disambiguating weak links.
-% Our progressive orchestrator monitors subgoal progress, escalates the strategy of traversal only when necessary, and repairs early mistakes through retries and replanning based on intermediate evidence rather than restarting the search.
-% Across \textsc{MultimodalQA}, \textsc{MMCoQA}, and \textsc{WebQA}, \textsc{\Ours} yields consistent gains in retrieval quality and downstream QA accuracy, together with improved accuracy--efficiency trade-offs.
-% These results suggest that treating retrieval as an adaptive, controllable process is an effective way to exploit document structure and navigational connectivity in open-domain multimodal settings.
-
-% Future work includes learning strategy-selection policies, improving robustness to missing or adversarial links, and jointly optimizing retrieval and generation under an explicit compute and context budget.
-
-
-
-% We introduce Visual Attentive Prompting (VAP), a simple-yet-effective training-free personalization pipeline that enables frozen VLA models to manipulate user-specific objects from a few reference images by grounding the target and prompting the policy with a mask-based highlight aligned with an instruction rewrite.
-% Across two simulation benchmarks and a real robot, VAP improves success and correct-object interaction over personalization baselines.
-% At the same time, \Ours still depends on the quality of the initial segmentation and on maintaining consistent masks across camera views, and we evaluate primarily single-object, short-horizon tasks. We therefore view our work as a core building block for richer forms of personalization, such as user-specific spatial conventions (e.g., ``my side of the desk'') and personalized multi-step routines, whose robustness under more challenging real-world conditions we leave for future work.
-
-% \section{Limitation}
-
-% \begin{itemize}
-%     \item Consistency of segmentation across camera view
-%     \item Depends on the first segmentation quality
-%     \item Robustness to occlusion while tracking objects (if loose, what happens?)
-%     \item Color-robustness (what if the color of other objects are red/blue?, Automatic choose of segmentation color..?)
-% \end{itemize}
+We presented \texttt{LILaC}, a multimodal retrieval framework designed to address the limitations of existing methods by incorporating layered component graph and late-interaction-based subgraph retrieval.
+Our layered graph construction explicitly captures semantic relationships among multimodal components, facilitating effective multihop reasoning. 
+The late-interaction retrieval method dynamically evaluates fine-grained component relevance, significantly enhancing retrieval accuracy, yet efficient.
+\updated{\texttt{LILaC}'s usage of pretrained multimodal encoders allows it to inherit the improvements from newer off-the-shelf embeddings.
+Extensive experiments confirm that \texttt{LILaC} consistently outperforms state-of-the-art approaches across all five benchmarks, also demonstrating its broad applicability and effectiveness in open-domain multimodal retrieval.}

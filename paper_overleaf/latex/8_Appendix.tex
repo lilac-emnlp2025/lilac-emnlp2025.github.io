@@ -1,0 +1,669 @@
+\newpage
+
+\appendix
+
+\section*{Appendix}
+\setcounter{section}{0}
+\renewcommand\thesection{\Alph{section}}
+
+
+
+\section{Software and Data Licenses}
+
+The licenses for the software and datasets used in this paper as follows:
+
+\squishlist
+    \item \texttt{VisRAG-Ret}: Apache-2.0
+    \item \texttt{ColPali}: PaliGemma License, MIT License
+    \item \texttt{MiniCPM-v2.6}: Apache-2.0
+    \item \texttt{Qwen2.5-VL 7B}: Apache-2.0
+    \item \texttt{Qwen2.5 72B}: Qwen
+    \item \texttt{MM-Embed}: CC-BY-NC-4.0
+    \item \texttt{NV-Embed-v2}: CC-BY-NC-4.0
+    \item \texttt{UniME}: MIT License
+    \item \texttt{mmE5}: MIT License
+\squishend
+
+
+All software and datasets were used strictly for research purposes and were not utilized in any non-research contexts, particularly for 
+commercial applications. 
+
+
+
+\section{AI Assistants}
+
+
+We implemented our code efficiently using ChatGPT-o3~\cite{jaech2024openai}, enabling rapid debugging and effective error resolution. 
+Additionally, we revised our paper using ChatGPT-4.5, which helped us enhance sentence clarity and readability through iterative rephrasing.
+
+
+
+
+
+
+\section{Reproducibility Statement}
+
+\texttt{VisRAG-Ret} was reproduced using the official code available at \href{https://github.com/OpenBMB/VisRAG}{\textcolor{linkpink}{\texttt{VisRAG official github}}}.
+
+\texttt{ColPali} and \texttt{NV-Embed-v2} were implemented applying their official model cards introduced in  \href{https://huggingface.co/vidore/colpali}{\textcolor{linkpink}{\texttt{ColPali huggingface}}} and \href{https://huggingface.co/nvidia/NV-Embed-v2}{\textcolor{linkpink}{\texttt{NV-Embed-v2 huggingface}}}, respectively.
+The source code, data, and other artifacts for \texttt{LILaC} have been made available at \href{https://github.com/joohyung00/lilac}{\textcolor{linkpink}{\texttt{our github repository}}}.
+
+
+
+
+\section{Model Details}
+\label{sec:appendix_model_details}
+
+
+\textbf{(Multimodal) Large language models:}
+\squishlist
+    \item \texttt{Qwen2.5 72B}: 72B parameters
+    \item \texttt{Qwen2.5-VL 7B}: 7B parameters
+    \item \texttt{MiniCPM-v2.6}: 8.1B parameters
+\squishend
+
+\noindent \textbf{Text embedders}
+\squishlist
+    \item \texttt{NV-Embed-v2}: 7.85B parameters
+\squishend
+
+\noindent \textbf{Cross-modal embedders:}
+\squishlist
+    \item \texttt{ColPali}: 3B parameters
+    \item \texttt{VisRAG-Ret}: 3.43B parameters
+\squishend
+
+
+\noindent \textbf{Multimodal embedders:}
+\squishlist
+    \item \texttt{MM-Embed}: 8.18B parameters
+    \item \texttt{UniME}: 7.57B parameters
+    \item \texttt{mmE5}: 10.6B parameters 
+\squishend
+\texttt{MM-Embed} is fine-tuned via modality-aware hard negative mining~\cite{mmembed}.
+\texttt{UniME} is enhanced with textual discriminative knowledge distillation and instruction-tuned hard negatives~\cite{unime}.
+\texttt{mmE5} leverages  synthetic multilingual data for robust cross-modal alignment~\cite{mme5}.
+
+
+
+
+
+
+
+
+
+
+\section{Experiment Supplementaries}
+
+\subsection{Hardware and Software Settings}
+All our experiments were conducted on a system with an Intel Xeon Gold 6230 GPU @ 2.10GHz, 1.5TB of RAM, and four NVIDIA RTX A6000 GPUs.
+
+
+
+\subsection{Implementation Details}
+\label{sec:implementation_details}
+
+We set the default hyperparameters for all experiments as beam width $b$ = 30 and number of iterations $n_i$ = 1.
+Additionally, for the ablation study that exclusively uses the layered graph structure without late interaction, we also maintained an identical beam width ($b$ = 30) to ensure a fair comparison.
+
+All experiments were conducted with `temperature = 0' and `do\_sample = False'. 
+To further ensure fair comparison, we aligned the ratio of components between the VisRAG methods and our approach to approximately 1:3, as justified by the empirical observation that a typical screenshot in our datasets encompasses roughly three distinct multimodal components. 
+Specifically, the \texttt{MultimodalQA} dataset contains 39,093 screenshots and 122,521 components, and the \texttt{MMCoQA} dataset comprises 5,175 screenshots and 14,493 components, both yielding a component-to-screenshot ratio close to 3:1.
+
+
+
+
+
+\subsection{Benchmark Details}
+
+\quad \texttt{\textbf{MP-DocVQA}}: It is a multimodal visual question answering benchmark designed for industrial documents. 
+It includes challenging questions that require extracting and reasoning over textual and visual information such as tables, figures, and charts found in documents. 
+The development set contains 591 questions sourced from a corpus of 741 multimodal document pages.
+
+\texttt{\textbf{SlideVQA}}: It focuses on extracting information from presentation slides and often requires multihop reasoning across multiple slides. 
+It emphasizes the capability to handle diverse layouts and structured textual information commonly found in presentations. 
+The \texttt{SlideVQA} development set comprises 556 questions, with the corpus containing 1,284 slide pages.
+
+\texttt{\textbf{InfoVQA}}: It targets visual question answering on infographics, which blend images, charts, and textual descriptions. 
+This dataset presents complex multimodal reasoning tasks where models must interpret visual elements combined with succinct textual explanations. 
+Its development set includes 718 questions drawn from a corpus of 459 infographic pages.
+
+
+\texttt{\textbf{MultimodalQA}}: It refers to the extended version of \texttt{MultimodalQA}, with its extension methodology introduced in M3DocRAG~\cite{m3docrag}.
+The dataset covers a wide variety of document types, including texts, images, and tables, requiring complex multihop reasoning across multiple documents. 
+Its evaluation set comprises 2,441 questions from over 3,368 PDF documents totaling approximately 41,005 pages.
+
+
+\texttt{\textbf{MMCoQA}}: It is a conversational multimodal question-answering dataset aimed at testing a system’s ability to handle multimodal information across multiple turns in a conversational context. 
+This dataset is also an extension of the \texttt{MMCoQA} dataset, which originally operates in a distractor setting.
+It involves coherent, multi-turn question sequences requiring integration of information from text, images, and tables. 
+The dataset includes 5,753 questions organized into 1,179 conversational dialogues. 
+Its corpus consists of 218,285 textual passages, 10,042 tables, and 57,058 images.
+
+
+\begin{table*}[t]
+    \centering
+    \small
+    \begin{tabular}{l|c|c|c|c|c}
+        \toprule
+        \textbf{Step} & \textbf{20\%} & \textbf{40\%} & \textbf{60\%} & \textbf{80\%} & \textbf{100\%} \\
+        \midrule
+        Node Generation       & 2m 8s   & 3m 53s  & 6m 20s  & 8m 29s  & 10m 20s \\
+        Edge Generation       & 38s     & 1m 6s   & 1m 46s  & 2m 18s  & 2m 54s  \\
+        Embedding Generation  & 24m 27s & 47m 44s & 1h 15m 31s & 1h 40m 42s & 2h 2m 43s \\
+        \midrule
+        \textbf{Total}        & \textbf{27m 13s} & \textbf{52m 43s} & \textbf{1h 23m 37s} & \textbf{1h 51m 29s} & \textbf{2h 15m 57s} \\
+        \bottomrule
+    \end{tabular}
+    \vspace{-1mm}
+    \caption{
+    \updated{Average offline construction time by corpus fraction. }
+    }
+    \label{tab:lcg_offline_runtime}
+    \vspace{-2mm}
+\end{table*}
+
+
+
+\begin{table*}[t]
+    \centering
+    \small
+    \begin{tabular}{l|c|c|c}
+        \toprule 
+        \textbf{Model} & \textbf{Params} & \textbf{Recall@3 (\%)} & \textbf{MRR@10 (\%)} \\
+        \midrule
+        \texttt{MM-Embed}
+            & 8B  & 78.89 & 75.18 \\   \cmidrule(lr){1-4}        
+        \texttt{UniME (LLaVA-OneVision)}
+            & 7B  & 69.83 & 65.30 \\ \cmidrule(lr){1-4} 
+        \texttt{mmE5-mllama (instruct)}
+            & 11B & 62.54 & 57.83 \\ \cmidrule(lr){1-4} 
+        \texttt{QQMM-embed}
+            & 8B  & 66.09 & 62.00 \\ \cmidrule(lr){1-4} 
+        \multirow{3}{*}{\texttt{LLaVE}}
+            & 0.5B & 56.59 & 51.76 \\ \cmidrule(lr){2-4} 
+            & 2B   & 62.01 & 57.09 \\ \cmidrule(lr){2-4} 
+            & 7B   & 67.14 & 62.13 \\ \cmidrule(lr){1-4} 
+        \multirow{2}{*}{\texttt{VLM2Vec (Qwen2-VL)}}
+            & 2B   & 47.57 & 42.58 \\ \cmidrule(lr){2-4} 
+            & 7B   & 53.24 & 47.68 \\
+        \bottomrule
+    \end{tabular}
+    \vspace{-1mm}
+    \caption{
+    \updated{Retrieval accuracy compared with different pretrained embedders.}
+    }
+    \label{tab:embedder_bias}
+    \vspace{-2mm}
+\end{table*}
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\subsection{Parameter Sensitivity}
+\label{sec:parameter_sensitivity}
+
+
+
+\begin{figure}[t]
+\centering
+\small
+\begin{tabular}
+{@{}c@{}c@{}}
+    { \includegraphics[width=.545\columnwidth]{figures/plot_beamwidth/AVERAGE.pdf}} &
+    { \includegraphics[width=.415\columnwidth]{figures/plot_iterations/AVERAGE_num_iters.pdf}   } \\
+    (a) Beam width &
+    (b) Number of \\     
+                    & 
+        iterations \\
+\end{tabular}
+    \vspace{-3mm}
+    \caption{Change in retrieval accuracy with varying parameter values.}
+    \label{fig:parameter_sensitivity}
+    \vspace{-4mm}
+\end{figure}
+
+%------------------ Appendix: parameter-sensitivity plots ------------------
+\begin{figure*}[t]
+  \centering
+  \small
+  %––––– helper settings ––––––––––––––––––––––––––––––––––––––––––––––
+  \newcommand{\imgwa}{0.45\linewidth}   % common width for each cell
+  \newcommand{\imgwb}{0.33\linewidth}   % common width for each cell
+  % adjust these paths if your folders are named differently
+  \newcommand{\beam}[1]{\includegraphics[width=\imgwa]{%
+      figures/plot_beamwidth/#1.pdf}}
+  \newcommand{\iter}[1]{\includegraphics[width=\imgwb]{%
+      figures/plot_iterations/#1.pdf}}
+  \setlength{\tabcolsep}{3pt}
+  %–––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  \begin{tabular}{@{}c@{}c@{}}
+
+        %––– MP-DocVQA –
+    \beam{MP-DocVQA} & \iter{MP-DocVQA} \\
+    (g) \texttt{MP-DocVQA}: $b$ & (h) \texttt{MP-DocVQA}: $n_i$ \\
+
+        %––– SlideVQA ––
+    \beam{SlideVQA} & \iter{SlideVQA} \\
+    (g) \texttt{SlideVQA}: $b$ & (h) \texttt{SlideVQA}: $n_i$ \\
+  
+    %––– InfoVQA –––
+    \beam{InfoVQA} & \iter{InfoVQA} \\
+    (g) \texttt{InfoVQA}: $b$ & (h) \texttt{InfoVQA}: $n_i$ \\
+
+    %––– MMWebQA ––
+    \beam{MMWebQA} & \iter{MMWebQA} \\
+    (g) \texttt{MultimodalQA}: $b$ & (h) \texttt{MultimodalQA}: $n_i$ \\
+
+    %––– MMCoQA –––
+    \beam{MMCoQA} & \iter{MMCoQA} \\
+    (g) \texttt{MMCoQA}: $b$ & (h) \texttt{MMCoQA}: $n_i$ \\
+
+   
+  \end{tabular}
+  \vspace{-3mm}
+  \caption{Parameter-sensitivity analysis for each dataset: effect of
+           beam width $b$ (left) and number of iterations $n_i$ (right).}
+  \label{fig:appendix_param_sensitivity}
+\end{figure*}
+%------------------------------------------------------------------------
+
+
+%------------------------- Appendix figure -------------------------
+\begin{figure*}[t]
+  \centering
+  \small
+  %––– a couple of helpers to keep the code short ––––––––––––––––––
+  \newcommand{\imgw}{0.37\linewidth}     % common width for each cell
+  \newcommand{\runtime}[1]{\includegraphics[width=\imgw]{figures/plot_runtime/#1.pdf}}
+  \newcommand{\breakdown}[1]{\includegraphics[width=\imgw]{figures/plot_breakdown/#1.pdf}}
+  \setlength{\tabcolsep}{3pt}            % tighten column padding
+  %––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+  \begin{tabular}{@{}c@{}c@{}}
+  %–––– MP-DocVQA ––
+    \runtime{MP-DocVQA} & \breakdown{MP-DocVQA} \\
+    (a) \texttt{MP-DocVQA} runtime comparison & 
+    (b) \texttt{LILaC}'s runtime breakdown on \texttt{MP-DocVQA} \\
+
+    %–––– SlideVQA –––
+    \runtime{SlideVQA} & \breakdown{SlideVQA} \\
+    (c) \texttt{SlideVQA} runtime comparison &
+    (d) \texttt{LILaC}'s runtime breakdown on \texttt{SlideVQA} \\
+    
+    %–––– InfoVQA ––––
+    \runtime{InfoVQA}  & \breakdown{InfoVQA}  \\
+    (e) \texttt{InfoVQA} runtime comparison &
+    (f) \texttt{LILaC}'s runtime breakdown on \texttt{InfoVQA} \\
+    
+    %–––– MMWebQA –––
+    \runtime{MMWebQA}  & \breakdown{MMWebQA}  \\
+    (g) \texttt{MultimodalQA} runtime comparison &
+    (h) \texttt{LILaC}'s runtime breakdown on \texttt{MultimodalQA} \\
+    
+    %–––– MMCoQA ––––
+    \runtime{MMCoQA}   & \breakdown{MMCoQA}   \\
+    (i) \texttt{MMCoQA} runtime comparison  & 
+    (j) \texttt{LILaC}'s runtime breakdown on \texttt{MMCoQA} \\
+    
+  \end{tabular}
+  \vspace{-3mm}
+  \caption{Comparison of algorithm execution time (i.e., runtime) for each algorithm per dataset (left) and \texttt{LILaC}'s runtime breakdown per dataset (right).}
+  \label{fig:appendix_runtime_breakdown}
+\end{figure*}
+%-------------------------------------------------------------------
+
+We explored the impact of varying the beam width $b\ (\in \{1, 2, 3, 4, 5, 10, 20, 30\})$ on the retrieval accuracies.
+As depicted in Figure~\ref{fig:parameter_sensitivity} (a), retrieval accuracy increased monotonically with larger beam widths, showing a significant improvement of 34.6\% in R@3 when expanding from the minimum of 1 to 30.
+This trend highlights the benefit of wider beam searches, enabling more comprehensive and accurate graph traversal. 
+Interestingly, despite these substantial accuracy gains, the overall execution time increased only marginally (2.8\%), indicating that graph traversal itself does not constitute the main computational bottleneck. 
+
+Figure~\ref{fig:parameter_sensitivity} (b) presents retrieval accuracy as a function of iteration count $n_i$, varied from 0 to 2. 
+We observed a modest yet meaningful 2.93\% improvement in R@3 when transitioning from zero to one iteration. 
+This accuracy gain primarily results from enabling multihop reasoning, which is inherently unavailable at $n_i = 0$. 
+While the overall increase might appear limited, it is particularly relevant to datasets explicitly requiring complex multihop reasoning, such as \texttt{MultimodalQA} and \texttt{MMCoQA}.
+
+
+We further analyzed how varying key hyperparameters—beam width $b$ and the number of iterations $n_i$—affect the accuracy of \texttt{LILaC} across the five different datasets. 
+We provide comprehensive plots illustrating the sensitivity and robustness of our method concerning these parameters in Figure~\ref{fig:appendix_param_sensitivity}.
+
+
+
+
+
+\subsection{Layered Component Graph Construction Overhead}
+\label{sec:lcg_construction_overhead}
+
+\updated{
+\textit{Theoretical complexity.}
+We analyze the offline cost of building $\mathcal{G}$ (cf.\ Definition~\ref{def:layered_component_graph}). 
+Let $n$ be the number of documents, $c$ the average number of \emph{components} per document, and $s$ the average number of \emph{subcomponents} per component.
+The total cost decomposes as
+\vspace{-1mm}
+\begin{equation*}
+\label{eq:tbuild-decomp}
+    T_{\text{build}} = T_{\text{nodes}} + T_{\text{edges}} + T_{\text{embed}}
+    \vspace{-3mm}
+\end{equation*}
+}
+
+\updated{
+\textit{Node generation.}
+We enumerate components in each document and extract subcomponents for every component; we also add the containment links $(C,c)$ to $E_{\downarrow}$.
+Enumerating all components across the corpus costs $O(nc)$, and extracting \& linking subcomponents costs $O(ncs)$:
+\vspace{-1mm}
+\begin{equation*}
+\label{eq:tbuild-nodes}
+    T_{\text{nodes}} = O(nc) + O(ncs)
+    \vspace{-3mm}
+\end{equation*}
+}
+
+\updated{
+\textit{Edge generation.}
+Within a document, we form the intra-document clique over $c$ components, yielding $\Theta(c^2)$ edges per document and $O(nc^2)$ overall.
+Across documents, we follow the link mapping $\mathcal{L}$; with a hash map for document lookup, retrieving targets is $O(1)$ per link and contributes the same order.
+Hence
+\vspace{-1mm}
+\begin{equation*}
+\label{eq:tbuild-edges}
+    T_{\text{edges}} = O(nc^2)
+\end{equation*}
+}
+
+\updated{
+\textit{Embedding generation.}
+We embed all component and subcomponent nodes using $f$, which scales with their counts:
+\begin{equation*}
+\label{eq:tbuild-embed}
+    T_{\text{embed}} = O(nc) + O(ncs)
+    \vspace{-3mm}
+\end{equation*}
+}
+
+\updated{
+Summing the terms gives
+% \vspace{-3mm}
+\begin{equation*}
+\label{eq:tbuild-final}
+    T_{\text{build}} = O(ncs + nc^2)
+\end{equation*}
+In typical regimes where $c,s \ll n$, the offline construction is approximately linear in $n$.
+The embedding term is usually dominant; importantly, it is fully offline, cacheable, and parallelizable across documents.
+}
+
+
+\updated{
+\textbf{Empirical runtime.}
+To validate the scalability, we measured average wall-clock time for each construction stage on increasing corpus fractions (20\%\,/\,40\%\,/\,60\%\,/\,80\%\,/\,100\%), holding the encoder $f$ and batching fixed.
+Results are shown in Table~\ref{tab:lcg_offline_runtime}. 
+They closely follow the above analysis, exhibiting near-linear growth in $n$ and revealing embedding as the primary bottleneck.
+At 100\% of the data, total build time is 2h\,15m\,57s; embedding accounts for ${\sim}90.23\%$ of the cost, with node and edge generation contributing ${\sim}7.60\%$ and ${\sim}2.13\%$, respectively.
+We emphasize that the offline cost can be further reduced via batching, sharding, and incremental updates when documents are added or modified.
+}
+
+
+\subsection{Comparison of Diverse Embedders}
+\label{sec:embedder_comparison}
+
+\updated{
+To probe how biases in pretrained embeddings manifest in retrieval, we hold the \texttt{LILaC} pipeline fixed and vary only the multimodal embedder.
+We evaluate seven families—\texttt{MM-Embed}, \texttt{UniME} (LLaVA-OneVision-7B-LoRA-Res336), \texttt{mmE5-mllama} (11B, instruct), \texttt{QQMM-embed}, \texttt{LLaVE} (0.5B/2B/7B), and \texttt{VLM2Vec} (Qwen2-VL; 2B/7B)—and report Recall@3 and MRR@10.}
+
+\updated{
+In Table~\ref{tab:embedder_bias}, we observe a consistent scaling trend: within \texttt{LLaVE}, Recall@3 improves by $+9.5\%$ relative from 0.5B to 2B ($62.01{-}56.59$ over $56.59$) and a further $+8.2\%$ from 2B to 7B; within \texttt{VLM2Vec}, 7B exceeds 2B by $+11.9\%$.
+Overall, the top performers are \texttt{MM-Embed}, \texttt{UniME}, and \texttt{LLaVE}-7B.
+These results indicate that LILaC's retrieval quality is sensitive to the inductive biases of the underlying encoder, yet benefits directly from stronger, larger models.
+}
+
+
+
+
+
+
+
+
+
+\subsection{Algorithm Execution Runtime: Further Analysis}
+
+We conducted an in-depth examination of runtime efficiency. 
+Specifically, we compared the overall execution time of our proposed method, \texttt{LILaC}, against other baseline algorithms across all datasets. 
+We further broke down \texttt{LILaC}'s runtime into individual components (such as retrieval, reranking, and LLM refinement) to clearly identify performance bottlenecks and highlight the efficiency of different pipeline stages.
+Detailed results are shown in Figure~\ref{fig:appendix_runtime_breakdown}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Prompt Templates}
+\label{sec:prompt_templates}
+
+We present detailed examples of the specific prompt templates used in our experiments. 
+These prompts correspond to three key tasks: \textsc{Object Detection}, \textsc{Query Decomposition}, \textsc{Modality Selection} and \textsc{Answer Generation}. 
+For each task, we provide clear instructions, expected input-output formats, and task-specific heuristics.
+
+
+\begin{figure*}[htb]
+
+\begin{tcolorbox}
+[title = \textsc{Object Detection}, colback = gray!10, colframe = black, sharp corners, boxrule=0.5mm]
+
+\textbf{Instruction}: \\
+Detect all objects in the image and return ONLY a JSON list of {\texttt{\{class, bbox\_2d: [x1, y1, x2, y2]\}}}. Do NOT include markdown or extra text. \\
+\\
+\textbf{Image:} {\texttt{\{image\}}} \\
+\textbf{Output:}
+\end{tcolorbox}
+
+\label{fig:object_detection}
+\end{figure*}
+
+
+\begin{figure*}[htb]
+
+\begin{tcolorbox}
+[title = \textsc{Query Decomposition}, colback = gray!10, colframe = black, sharp corners, boxrule=0.5mm]
+
+\textbf{Instruction:} \\
+You are a retrieval-oriented query decomposer. \\
+\\
+Goal – Produce the smallest set (1 – 5) of component-targeting sub-queries.  \\
+Each sub-query must describe one retrievable component (sentence, paragraph, table row, figure, etc.) whose embedding should be matched.  \\
+Together, the sub-queries must supply all the information needed to answer the original question. \\
+\\
+\textbf{Guidelines:} \\
+1. Entity \& noun-phrase coverage: Every noun phrase and named entity that appears in the original question must appear at least once across the entire set of sub-queries (you may distribute them). 
+Keep each phrase exactly as written. \\ 
+2. One-component rule: A sub-query should reference only the facts expected to co-occur within the same component. If two facts will likely be in different components, put them in different sub-queries. \\ 
+3. No unnecessary splitting: If the whole answer can be found in a single component, return only one sub-query. \\ 
+4. De-contextualize: Rewrite pronouns and implicit references so every sub-query is understandable on its own. \\ 
+5. Keyword distribution: Spread constraints logically (e.g., one sub-query for “light rail completion date”, another for “city with a large arched bridge from the 1997 Australia rugby-union test match”). \\ 
+6. Remove redundancy: Merge duplicate or paraphrased sub-queries before you output. \\ 
+7. Ordering for dependencies: If the answer to one sub-query is needed for another, place the prerequisite first. \\ 
+8. Output format: Return only a JSON array of strings — no keys, explanations, or extra text. \\
+\\
+\textbf{Question:} {\texttt{\{question\}}} \\
+\textbf{Output:}
+\end{tcolorbox}
+\label{fig:query_decomposition}
+\end{figure*}
+
+
+
+\begin{figure*}[htb]
+\begin{tcolorbox}
+[title = \textsc{Modality Selection}, colback = gray!10, colframe = black, sharp corners, boxrule=0.5mm]
+
+\textbf{Instruction:} \\
+You are a modality selector for multimodal QA. \\
+\\
+\textbf{Task:} \\
+Given the single sub-question below, choose the one modality that is most appropriate for obtaining its answer. \\
+\\
+\textbf{Allowed modalities:}  \\
+• text: unstructured prose (paragraphs, sentences, propositions) \\ 
+• table: structured rows/columns (spreadsheets, stats tables, infoboxes) \\ 
+• image: visual information (photos, posters, logos, charts) \\
+\\
+\textbf{Heuristics:}  \\
+1. Numeric totals, percentages, year-by-year figures $\rightarrow$ table \\ 
+2. Visual appearance, colours, logos, “what does … look like” $\rightarrow$ image \\ 
+3. Definitions, roles, biographies, causal explanations, quotes $\rightarrow$ text \\ 
+4. If two modalities could work, pick the one that will yield the answer fastest. \\
+\\
+\textbf{Output format:} \\
+Return only the modality label on a single line – exactly \texttt{text}, \texttt{table}, or \texttt{image}. \\ 
+No JSON, no additional text. \\
+\\
+\textbf{Subquery:} {\texttt{\{subquery\}}} \\
+\textbf{Output:}
+\end{tcolorbox}
+\label{fig:modality_selection}
+\end{figure*}
+
+
+
+
+
+
+
+
+% \begin{figure*}[htb]
+% \begin{tcolorbox}[
+%     title = Answer Generation Prompt,
+%     colback = gray!10,
+%     colframe = black,
+%     sharp corners,
+%     boxrule = 0.5mm
+% ]
+% Below is an instruction that describes a task, paired with an input that provides further context.  
+% Write a response that appropriately completes the request.\\
+% \\
+% \textbf{Instruction:} \\
+% Using the \texttt{f\_answers()} API, return a list of answers to the question based on \emph{retrieved webpage components}.
+% A retrieved component can be a passage, a table, or an image.
+% Strictly follow the format of the example below and keep the answer short.
+% For \emph{yes/no} questions, respond only with \texttt{f\_answers(["yes"])} or \texttt{f\_answers(["no"])}. \\
+% \\
+% \textbf{Example:} \\
+
+% \texttt{Passage} \\
+% Title: South Asia \\
+% The current territories of Afghanistan, Bangladesh, Bhutan, Maldives, Nepal, India, Pakistan, and Sri Lanka form South Asia. The South Asian Association for Regional Cooperation (SAARC) is an economic cooperation organisation established in 1985 that includes all eight nations comprising South Asia. \\
+% \\
+% \texttt{Passage} \\
+% Title: UK Joint Expeditionary Force \\
+% The UK Joint Expeditionary Force (JEF) is a United Kingdom-led expeditionary force which may include Denmark, Finland, Estonia, Latvia, Lithuania, the Netherlands, Sweden, and Norway. It is distinct from the Franco-British Combined Joint Expeditionary Force. \\
+% \\
+% \texttt{Table} \\
+% Title: Lithuanian Armed Forces — Current operations \\
+
+% Deployment | Organization | Operation | Personnel \\
+% Somalia | EU | Operation Atalanta | 15 \\
+% Mali | EU | EUTM Mali | 2 \\
+% Afghanistan | NATO | Operation Resolute Support | 29 \\
+% Libya | EU | EU Navfor Med | 3 \\
+% Mali | UN | MINUSMA | 39 \\
+% Iraq | CJTF | Operation Inherent Resolve | 6 \\
+% Central African Republic | EU | EUFOR RCA | 1 \\
+% Kosovo | NATO | KFOR | 1 \\
+% Ukraine | — | Training mission | 40 \\
+% \\
+% Question: Among the Lithuanian Armed Forces' current operations, which deployment involves fewer personnel: \emph{Kosovo}, or the deployment in the nation that, along with six others, constitutes the sub-continent of South Asia? \\
+% Answer: The South Asia passage shows Afghanistan is part of that region. The table lists 29 personnel in Afghanistan and only 1 in Kosovo, so \texttt{f\_answers(["Kosovo"])}. \\
+% \\
+% \textbf{Input:} \\
+% Using the images and texts given, answer the question below in a single word or phrase. \\
+% \\
+% \textbf{Question:} \texttt{\{question\}} \\
+% \textbf{Answer:}
+% \end{tcolorbox}
+% \label{fig:answer_generation_prompt}
+% \end{figure*}
+
+
+
+\begin{figure*}[htb]
+\begin{tcolorbox}[
+  enhanced,
+  title = \textsc{Answer Generation},
+  colback = gray!10,
+  colframe = black,
+  sharp corners,
+  boxrule = 0.5mm
+]
+
+\textbf{Instruction:}\\
+Using the \texttt{f\_answers()} API, return a list of answers to the question based on \emph{retrieved webpage components}.
+A retrieved component can be a passage, a table, or an image.
+Strictly follow the format of the example below and keep the answer short.
+For \emph{yes/no} questions, respond only with \texttt{f\_answers(["yes"])} or \texttt{f\_answers(["no"])}.\\
+
+\textbf{Example:}\\[-2pt]
+\noindent\rule{\linewidth}{0.5pt} % ---------- top wrapping line ----------
+
+\texttt{[Passage]}\\
+Document title: South Asia\\
+The current territories of Afghanistan, Bangladesh, Bhutan, Maldives, Nepal, India, Pakistan, and Sri Lanka form South Asia. The South Asian Association for Regional Cooperation (SAARC) is an economic cooperation organisation established in 1985 that includes all eight nations comprising South Asia. \\
+
+\texttt{[Passage]}\\
+Document title: UK Joint Expeditionary Force\\
+The UK Joint Expeditionary Force (JEF) is a United Kingdom-led expeditionary force which may include Denmark, Finland, Estonia, Latvia, Lithuania, the Netherlands, Sweden, and Norway. It is distinct from the Franco-British Combined Joint Expeditionary Force. \\
+
+\texttt{[Table]}\\
+Document title: Lithuanian Armed Forces — Current operations\\[2pt]
+\TextHeader
+\TextRow{Somalia}{EU}{Operation Atalanta}{15}
+\TextRow{Mali}{EU}{EUTM Mali}{2}
+\TextRow{Afghanistan}{NATO}{Operation Resolute Support}{29}
+\TextRow{Libya}{EU}{EU Navfor Med}{3}
+\TextRow{Mali}{UN}{MINUSMA}{39}
+\TextRow{Iraq}{CJTF}{Operation Inherent Resolve}{6}
+\TextRow{Central African Republic}{EU}{EUFOR RCA}{1}
+\TextRow{Kosovo}{NATO}{KFOR}{1}
+\TextRow{Ukraine}{—}{Training mission}{40}
+
+\vspace{4mm}
+\textbf{Question:} Among the Lithuanian Armed Forces' current operations, which deployment involves fewer personnel: Kosovo, or the deployment in the nation that, along with six others, constitutes the sub-continent of South Asia? \\
+\textbf{Answer:} The South Asia passage shows Afghanistan is part of that region. The table lists 29 personnel in Afghanistan and only 1 in Kosovo, so \texttt{f\_answers(["Kosovo"])}.
+\noindent\rule{\linewidth}{0.5pt} 
+% ---------- bottom wrapping line ----------
+\\ \\
+Using the images and texts given, answer the question below in a single word or phrase.\\ \\
+\texttt{\{retrieved components\}}\\ \\
+\textbf{Question:} \texttt{\{question\}}\\
+\textbf{Answer:}
+\end{tcolorbox}
+\label{fig:answer_generation_prompt}
+\end{figure*}

@@ -2,10 +2,10 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="description" content="Failure is Feedback: History-Aware Backtracking for Agentic Traversal in Multimodal Graphs. An agentic retriever that turns failures into better plans for open-domain multimodal document retrieval.">
-  <meta name="keywords" content="Failure is Feedback, FiF, agentic retrieval, multimodal retrieval, backtracking, graph traversal, RAG">
+  <meta name="description" content="LILaC: Late Interacting in Layered Component Graph for Open-domain Multimodal Multihop Retrieval. A layered-graph retriever with late interaction that achieves state-of-the-art multimodal document retrieval without fine-tuning.">
+  <meta name="keywords" content="LILaC, multimodal retrieval, multihop, layered component graph, late interaction, document retrieval, EMNLP 2025, VisRAG, RAG">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Failure is Feedback | History-Aware Backtracking for Agentic Traversal in Multimodal Graphs</title>
+  <title>LILaC | Late Interacting in Layered Component Graph for Open-domain Multimodal Multihop Retrieval</title>
 
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
   <link rel="stylesheet" href="./static/css/bulma.min.css">
@@ -38,9 +38,9 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <p class="tagline">Open-Domain Multimodal Retrieval</p>
+          <p class="tagline">Open-domain Multimodal Multihop Retrieval</p>
           <h1 class="title is-1 publication-title">
-            Failure is Feedback:<br>History-Aware Backtracking for Agentic Traversal in Multimodal Graphs
+            LILaC:<br>Late Interacting in Layered Component Graph for Open-domain Multimodal Multihop Retrieval
           </h1>
 
           <div class="is-size-5 publication-authors">
@@ -52,36 +52,30 @@
             <span class="author-block">POSTECH (CSE · GSAI)</span>,
             <span class="author-block">DirectorLabs</span>
           </div>
-          <!-- intentionally no venue shown to preserve anonymity -->
+          <div class="is-size-6 publication-authors" style="margin-top: 0.3rem;">
+            <span class="pill">EMNLP 2025 (Main)</span>
+          </div>
 
           <div class="column has-text-centered" style="margin-top: 1.2rem;">
             <div class="publication-links">
               <span class="link-block">
-                <a href="./paper.pdf" class="external-link button is-normal is-rounded is-dark">
+                <a href="https://aclanthology.org/2025.emnlp-main.1037.pdf" class="external-link button is-normal is-rounded is-dark" target="_blank" rel="noopener">
                   <span class="icon"><i class="fas fa-file-pdf"></i></span>
                   <span>Paper (PDF)</span>
                 </a>
               </span>
               <span class="link-block">
-                <button class="button is-normal is-rounded is-static" disabled>
-                  <span class="icon"><i class="ai ai-arxiv"></i></span>
-                  <span>arXiv (coming soon)</span>
-                </button>
+                <a href="https://aclanthology.org/2025.emnlp-main.1037/" class="external-link button is-normal is-rounded is-dark" target="_blank" rel="noopener">
+                  <span class="icon"><i class="fas fa-link"></i></span>
+                  <span>ACL Anthology</span>
+                </a>
               </span>
-              <!--
               <span class="link-block">
-                <a href="#" class="external-link button is-normal is-rounded is-dark">
+                <a href="https://github.com/joohyung00/lilac" class="external-link button is-normal is-rounded is-dark" target="_blank" rel="noopener">
                   <span class="icon"><i class="fab fa-github"></i></span>
                   <span>Code</span>
                 </a>
               </span>
-              <span class="link-block">
-                <a href="#" class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon"><p style="font-size:18px">🗂️</p></span>
-                  <span>Dataset</span>
-                </a>
-              </span>
-              -->
             </div>
           </div>
         </div>
@@ -97,10 +91,10 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Open-domain multimodal document retrieval must navigate a graph of paragraphs, tables, and images where meaning depends on local context and hyperlinks. Existing graph-based retrievers rely on hop-agnostic similarity scores and rigid plans, so they struggle to recover when early hops are misleading or underspecified.
+            Multimodal document retrieval must surface the right paragraphs, tables, and images across documents while respecting both local detail and cross-document links. Fixed, single-granular units often mix relevant and distracting content, and most systems struggle to reason over multihop connections across modalities.
           </p>
           <p>
-            <strong>Failure is Feedback (FiF)</strong> reframes traversal as a sequential decision process. An orchestrator maintains a structured memory of successes and failures, escalates from lightweight vector matching to LLM reasoning only when a hop is ambiguous, and performs <em>history-aware backtracking</em> that re-anchors search using failure traces. Experiments on <span class="pill">MultimodalQA</span>, <span class="pill">MMCoQA</span>, and <span class="pill">WebQA</span> show state-of-the-art retrieval while keeping API usage cost-aware.
+            <strong>LILaC</strong> introduces a <em>layered component graph</em> with coarse- and fine-grained nodes and navigational edges, paired with <em>late-interaction-based subgraph retrieval</em> that decomposes queries and scores edges on-the-fly. The approach attains state-of-the-art retrieval on five benchmarks (MP-DocVQA, SlideVQA, InfoVQA, MultimodalQA, MMCoQA) using only pretrained models—no additional fine-tuning—and is released at <a href="https://github.com/joohyung00/lilac" target="_blank" rel="noopener">github.com/joohyung00/lilac</a>.
           </p>
         </div>
       </div>
@@ -114,25 +108,25 @@
     <div class="columns is-multiline">
       <div class="column is-one-third">
         <div class="highlight-card">
-          <p class="has-text-weight-semibold">History-aware backtracking</p>
+          <p class="has-text-weight-semibold">Layered component graph</p>
           <p class="content">
-            Failed hops are logged as actionable traces; FiF re-anchors to promising prior contexts instead of simply undoing steps, preventing repeated dead ends.
+            Documents are encoded as coarse (paragraph/table/image) nodes linked to fine-grained subcomponents (sentences/rows/objects), preserving hierarchical structure and navigational links for multihop reasoning.
           </p>
         </div>
       </div>
       <div class="column is-one-third">
         <div class="highlight-card">
-          <p class="has-text-weight-semibold">Cost-aware strategy escalation</p>
+          <p class="has-text-weight-semibold">Late-interaction traversal</p>
           <p class="content">
-            Traversal begins with cheap vector matching and escalates to LLM reasoning only when ambiguity or past failures justify the extra cost.
+            Query is decomposed by an LLM into modality-specific subqueries; beam search scores edges on-the-fly via late interaction between subqueries and fine-grained evidence, avoiding full edge embedding.
           </p>
         </div>
       </div>
       <div class="column is-one-third">
         <div class="highlight-card">
-          <p class="has-text-weight-semibold">Structured decision process</p>
+          <p class="has-text-weight-semibold">State-of-the-art results</p>
           <p class="content">
-            An orchestrator alternates <em>Traverse</em>, <em>Plan</em>, and <em>Stop</em> actions over a layered component graph, guided by a memory of subqueries and outcomes.
+            With pretrained embedders (MM-Embed, UniME, mmE5), LILaC sets new retrieval and end-to-end QA performance across five benchmarks, surpassing VisRAG/ColPali without task-specific fine-tuning.
           </p>
         </div>
       </div>
@@ -142,11 +136,11 @@
 
 <section class="section">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 has-text-centered">Why Failure is Feedback?</h2>
+    <h2 class="title is-3 has-text-centered">Motivation</h2>
     <div class="figure-frame">
-      <img src="./static/images/introduction.png" alt="Motivating failures for graph-based retrieval">
+      <img src="./static/images/introduction_motivation.png" alt="Challenges of TextRAG and VisRAG in multimodal retrieval">
       <p class="figure-caption has-text-centered">
-        Motivating examples: (a) similarity-only traversal follows a spurious cue; (b) a fixed plan issues an underspecified hop and cannot recover. FiF turns such failures into guidance.
+        Challenges of existing TextRAG and VisRAG pipelines: (a) text-only summaries can drop crucial visual cues; (b) coarse screenshot granularity dilutes relevant content; (c) missing structural links limits multihop reasoning.
       </p>
     </div>
   </div>
@@ -158,9 +152,9 @@
     <div class="columns is-centered">
       <div class="column is-full-width">
         <div class="figure-frame">
-          <img src="./static/images/overview.png" alt="Overview of the FiF orchestrator and actions">
+          <img src="./static/images/system_overview.png" alt="Overview of the LILaC layered component graph and retrieval pipeline">
           <p class="figure-caption">
-            The orchestrator decides when to <strong>Traverse</strong> (choose anchors, subquery, and strategy), when to <strong>Plan</strong> (revise subqueries), and when to <strong>Stop</strong> to rerank accumulated evidence. Memory keeps successes and failures, enabling history-aware re-anchoring and strategy escalation.
+            LILaC builds a two-layer component graph (coarse components and fine-grained subcomponents), encodes navigational and hierarchical edges, then performs late-interaction-guided traversal to retrieve a query-relevant subgraph.
           </p>
         </div>
       </div>
@@ -170,13 +164,13 @@
 
 <section class="section">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 has-text-centered">Layered Component Graph</h2>
+    <h2 class="title is-3 has-text-centered">Late Interaction</h2>
     <div class="columns is-centered">
       <div class="column is-full-width">
         <div class="figure-frame">
-          <img src="./static/images/preliminaries.png" alt="Layered component graph and notation">
+          <img src="./static/images/late_interaction.png" alt="Edge-level late interaction scoring in LILaC">
           <p class="figure-caption">
-            FiF operates on a layered component graph that mixes navigational and hierarchical edges across documents, components, and subcomponents, supporting multi-hop and multi-granularity retrieval.
+            Edge-level scoring matches each decomposed subquery to the most relevant fine-grained subcomponent incident to an edge, summing evidence to guide traversal without precomputing all edge embeddings.
           </p>
         </div>
       </div>
@@ -186,13 +180,13 @@
 
 <section class="section">
   <div class="container is-max-desktop">
-    <h2 class="title is-3 has-text-centered">Experiments</h2>
+    <h2 class="title is-3 has-text-centered">Results</h2>
     <div class="content">
       <ul>
-        <li><strong>Benchmarks:</strong> MultimodalQA, MMCoQA, and WebQA reconstructed as webpage-style corpora with paragraphs, tables, and images; evaluated with Recall@k and MRR@10, plus downstream QA (EM/F1).</li>
-        <li><strong>Performance:</strong> FiF achieves state-of-the-art retrieval across all three benchmarks. Removing history-aware backtracking drops R@10 from <strong>85.82 → 79.26</strong> on MultimodalQA and <strong>81.91 → 77.45</strong> on WebQA, highlighting the value of failure traces.</li>
-        <li><strong>Efficiency:</strong> Cost-aware escalation keeps average API usage moderate (≈$0.11/query on MultimodalQA with 7–8 LLM calls), balancing accuracy and latency.</li>
-        <li><strong>Coming soon:</strong> Code and dataset links will be added once released.</li>
+        <li><strong>Benchmarks:</strong> MP-DocVQA, SlideVQA, InfoVQA (VisRAG-style document images) plus reconstructed <strong>MultimodalQA</strong> and <strong>MMCoQA</strong> webpages; evaluated with R@3 and MRR@10 for retrieval, EM/F1 for end-to-end QA.</li>
+        <li><strong>Retrieval gains:</strong> LILaC (MM-Embed) sets the best R@3/MRR@10 across all five datasets&mdash;e.g., <strong>69.07 / 75.28</strong> on MultimodalQA (+10.34 R@3 over VisRAG-Ret) and <strong>55.80 / 50.77</strong> on MMCoQA (+28.17 R@3).</li>
+        <li><strong>QA accuracy:</strong> Paired with Qwen2.5-VL 7B, LILaC delivers the highest F1 on every benchmark (e.g., <strong>51.97</strong> on MultimodalQA, <strong>43.22</strong> on MMCoQA) while staying competitive on VisRAG-style datasets.</li>
+        <li><strong>No fine-tuning required:</strong> Uses pretrained multimodal embedders (MM-Embed/UniME/mmE5) and late interaction scoring to avoid storing edge embeddings while improving both precision and efficiency.</li>
       </ul>
     </div>
   </div>
@@ -201,11 +195,12 @@
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-<pre><code>@inproceedings{yun2026failure,
-  title     = {Failure is Feedback: History-Aware Backtracking for Agentic Traversal in Multimodal Graphs},
-  author    = {Yun, Joohyung and Lee, Doyup and Han, Wook-Shin},
-  booktitle = {Preprint},
-  year      = {2026},
+<pre><code>@inproceedings{yun2025lilac,
+  title={LILaC: Late Interacting in Layered Component Graph for Open-domain Multimodal Multihop Retrieval},
+  author={Yun, Joohyung and Lee, Doyup and Han, Wook-Shin},
+  booktitle={Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing},
+  pages={20551--20570},
+  year={2025}
 }</code></pre>
   </div>
 </section>
@@ -213,7 +208,7 @@
 <footer class="footer">
   <div class="container">
     <div class="content has-text-centered">
-      <a class="icon-link" href="./paper.pdf">
+      <a class="icon-link" href="https://aclanthology.org/2025.emnlp-main.1037.pdf" target="_blank" rel="noopener">
         <i class="fas fa-file-pdf"></i>
       </a>
     </div>

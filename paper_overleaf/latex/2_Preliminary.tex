@@ -1,0 +1,17 @@
+\section{Preliminary}
+\vspace{-2mm}
+
+In this paper, we address multimodal document retrieval, defined as the task of retrieving a ranked list of multimodal components relevant to a given natural language query.
+Formally, a retrieval corpus $\mathcal{D}$ comprises a collection of multimodal documents $\{D_1, D_2, \dots, D_{k_{doc}}\}$.
+Each multimodal document $D = [C_1, \dots, C_{k_{comp}}]$ is a sequence of multimodal components.
+A multimodal component $C$ may belong to one of three distinct modalities
+\squishlist
+    \item \textit{Paragraph} $P$: a sequence of tokens, forming an unstructured text segment.
+    \item \textit{Table} $T$: a structured matrix with rows $T_{i}$ indexed by row number $i$.
+    \item \textit{Image} $I$: a tensor $I \in \mathbb{R}^{w \times h \times a}$, with $w$, $h$, and $a$ denote the width, height and the number of channels, respectively.
+\squishend
+Given a natural language query $Q$, a retrieval corpus $\mathcal{D}$ and a link mapping $\mathcal{L}$, the retrieval task aims to produce a ranked list of components $\mathcal{R} = [C_1, \dots, C_{n_{ret}}]$.
+% The goal for $\mathcal{R}$ is to include the ground truth set of relevant components $\{C_{gt_1}, \dots,  C_{gt_r}\}$.
+The goal is for the ranked list $\mathcal{R}$ to contain the ground truth set of relevant components ${C_{gt_1}, \dots, C_{gt_r}}$.
+
+The link mapping $\mathcal{L} = \mathcal{C} \to \mathcal{D}$ represents the association or hyperlink relationships between individual components $C$ and their respective multimodal documents $D$, similar to hyperlinks commonly used in webpages and PDF files.
